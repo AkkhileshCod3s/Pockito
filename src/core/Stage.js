@@ -77,7 +77,10 @@ export class Stage {
     rimR.target = this.focus;
     this.lightRig.add(rimL, rimR);
 
-    this.lights = { key, fill, rimL, rimR };
+    const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+    this.lightRig.add(ambient);
+
+    this.lights = { key, fill, rimL, rimR, ambient };
     this.setFocus(0, 0, 1);
   }
 

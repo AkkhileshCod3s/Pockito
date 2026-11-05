@@ -3,7 +3,7 @@ import * as THREE from 'three';
 const SLEEPING = new Set(['sleep', 'sleepy']);
 const AIRBORNE = new Set(['carried', 'drop']);
 const DRAG_THRESHOLD_PX = 6;
-const PET_WINDOW = 3;
+const PET_WINDOW = 3.0;
 const GAZE_DEPTH = 4;
 const VELOCITY_WINDOW_MS = 80;
 const MAX_THROW = 14;
@@ -97,6 +97,7 @@ export class PointerDirector {
 
   #startDrag(w) {
     const c = this.character;
+    c.brain?.resetInteraction?.();
     this.drag = { offsetX: w.x - c.loco.x, offsetH: w.h - c.lift, x: c.loco.x, h: c.lift, t: performance.now(), history: [] };
     c.carry = { vx: 0 };
     c.trigger('carried', {}, true);
@@ -122,13 +123,17 @@ export class PointerDirector {
 
   #pet() {
     const c = this.character;
+    c.brain?.resetInteraction?.();
     const now = performance.now() / 1000;
     this.pets = this.pets.filter((t) => now - t < PET_WINDOW);
     this.pets.push(now);
     const count = this.pets.length;
-    if (SLEEPING.has(c.stateName)) c.trigger('surprised', { then: 'wake' }, true);
-    else if (count >= 6 && c.stateName !== 'dance') c.trigger('dance', { then: 'idle' }, true);
-    else c.trigger('pet', { count, then: 'idle' }, true);
+    if (SLEEPING.has(c.stateName)) {
+      c.trigger(c.mob?.id === 'wolf' ? 'wake' : 'surprised', { then: 'idle' }, true);
+    } else {
+      c.mob.triggerPetReaction?.(count);
+      c.trigger('pet', { count, then: 'idle' }, true);
+    }
   }
 
   update(dt) {
@@ -140,6 +145,21 @@ export class PointerDirector {
       this.over = over;
       this.host?.setPointerOver(over);
       document.body.classList.toggle('grab', over);
+
+      if (c.mob) c.mob.isHovered = over;
+
+      if (over) {
+        c.brain?.resetInteraction?.();
+        if (c.mob?.id === 'wolf' && SLEEPING.has(c.stateName)) {
+          c.trigger('wake', { then: 'idle' }, true);
+        } else if (!SLEEPING.has(c.stateName) && !AIRBORNE.has(c.stateName) && c.stateName !== 'boot' && c.stateName !== 'carried' && c.stateName !== 'drop') {
+          c.trigger('hover', {}, false);
+        }
+      } else {
+        if (c.stateName === 'hover') {
+          c.trigger('idle', {}, true);
+        }
+      }
     }
 
     const airborne = !!this.drag || AIRBORNE.has(c.stateName) || c.lift > 0.03 || c.restLift > 0.03;

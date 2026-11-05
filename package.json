@@ -19,7 +19,8 @@
     "desktop-pet",
     "pockito",
     "fish",
-    "wolf"
+    "wolf",
+    "guinea-pig"
   ],
   "dependencies": {
     "three": "^0.186.1"

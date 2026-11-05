@@ -9,8 +9,9 @@ npm start
 
 ## Credits
 
-- **Fish (blue)** by [u1kikoo2wishh](https://sketchfab.com/3d-models/fish-d34b1d8d562c4bb29290939ee513f685) (CC-BY-4.0, texture recoloured to blue).
-- **Minecraft - Wolf** by [Vincent Yanez](https://sketchfab.com/3d-models/minecraft-wolf-9aa99b5c203240f7ac357c4e8b84e1d6) (CC-BY-4.0, mane recoloured red).
+- **Minecraft Wolf (Baby)** by [Matt Alexander](https://sketchfab.com/3d-models/minecraft-wolf-f9181c2d3ea546988187be74173b406b) (CC-BY-4.0).
+- **Fish Swimming**: `fish_swimming.glb` (TODO: add source author and license attribution).
+- **Guinea Pig**: `guinea_pig.glb` (TODO: add source author and license attribution).
 
 ## License
 

@@ -49,7 +49,7 @@ export const STATES = {
     enter(c, p, s) {
       s.baseExpr = c.socialMode ? 'neutral' : c.brain.idleExpression();
       c.face.setExpression(s.baseExpr);
-      s.duration = p.duration ?? rand(4, 9);
+      s.duration = p.duration ?? (c.mob?.id === 'wolf' ? rand(1.5, 3.2) : rand(4, 9));
       s.fidget = null;
       s.nextFidget = rand(1.5, 4);
     },
@@ -60,7 +60,7 @@ export const STATES = {
       s.nextFidget -= dt;
       if (!s.fidget && s.nextFidget <= 0) {
         s.fidget = { type: pick(['tilt', 'tilt', 'lookBack', 'shrug', 'hands', 'sway', 'face', 'face']), t0: t, dur: rand(1.4, 2.4), side: Math.random() < 0.5 ? -1 : 1 };
-        if (s.fidget.type === 'face') {
+        if (s.fidget.type === 'face' && c.mob?.id !== 'wolf') {
           s.fidget.dur = rand(1.8, 2.8);
           c.face.setExpression(pick(IDLE_FACES));
         }
@@ -69,29 +69,29 @@ export const STATES = {
         const f = s.fidget;
         const k = (t - f.t0) / f.dur;
         if (k >= 1) {
-          if (f.type === 'face') c.face.setExpression(s.baseExpr);
+          if (f.type === 'face' && c.mob?.id !== 'wolf') c.face.setExpression(s.baseExpr);
           s.fidget = null;
           s.nextFidget = rand(2, 5);
         } else {
-          if (f.type === 'face') c.target.headRoll += 0.15 * f.side * Math.sin(k * Math.PI);
+          if (f.type === 'face' && c.mob?.id !== 'wolf') c.target.headRoll += 0.15 * f.side * Math.sin(k * Math.PI);
           const e = Math.sin(k * Math.PI);
-          if (f.type === 'tilt') c.target.headRoll += 0.3 * f.side * e;
+          if (f.type === 'tilt' && c.mob?.id !== 'wolf') c.target.headRoll += 0.3 * f.side * e;
           if (f.type === 'lookBack') {
             c.target.headYaw += 0.75 * f.side * e;
             c.lookHint = [f.side * 0.8 * e, 0.1];
           }
-          if (f.type === 'shrug') {
+          if (f.type === 'shrug' && c.mob?.id !== 'wolf') {
             c.target.armRaiseL += 0.3 * e;
             c.target.armRaiseR += 0.3 * e;
             c.target.headRoll += 0.12 * f.side * e;
           }
-          if (f.type === 'hands') {
+          if (f.type === 'hands' && c.mob?.id !== 'wolf') {
             c.target.armSwingL = c.target.armSwingR = 0.55 * e;
             c.target.elbowL = c.target.elbowR = 1.0 * e;
             c.target.headPitch += 0.3 * e;
             c.lookHint = [0, -0.7 * e];
           }
-          if (f.type === 'sway') {
+          if (f.type === 'sway' && c.mob?.id !== 'wolf') {
             c.target.torsoRoll += 0.08 * f.side * Math.sin(k * Math.PI * 2);
             c.target.headRoll -= 0.1 * f.side * Math.sin(k * Math.PI * 2);
           }
@@ -106,10 +106,17 @@ export const STATES = {
     enter(c, p) {
       c.loco.walkTo(p.x ?? c.loco.x);
       if (p.lift !== undefined) c.restLift = p.lift;
-      c.face.setExpression(p.mood ?? pick(WALK_FACES));
+      c.face.setExpression(c.mob?.id === 'wolf' ? 'neutral' : (p.mood ?? pick(WALK_FACES)));
     },
     update(c, dt, t, s, p) {
-      c.target.torsoPitch = 0.05;
+      c.target.torsoPitch = c.mob?.id === 'wolf' ? 0 : 0.05;
+      if (c.mob?.id === 'bluefish') {
+        c.overlay.bodyY = Math.sin(t * 4) * 0.04;
+        c.target.torsoRoll = -Math.sign(c.loco.speed || 1) * 0.12;
+      } else if (c.mob?.id === 'guineapig') {
+        c.overlay.torsoRoll = Math.sin(t * 14) * 0.04;
+        c.overlay.bodyY = Math.abs(Math.sin(t * 14)) * 0.015;
+      }
       if (!c.attention) c.lookHint = [-Math.sign(c.loco.speed) * 0.35, -0.05];
       if (c.loco.arrived && Math.abs(c.restLift - c.lift) < 0.08 * c.placement.scale && t > 0.3) return then(p);
       if (t > 30) return 'idle';
@@ -204,15 +211,27 @@ export const STATES = {
     update(c, dt, t, s) {
       c.poseRate = 2.5;
       c.target.sit = 1;
-      c.target.headPitch = 0.5;
-      c.target.headRoll = 0.15;
-      c.target.torsoPitch = 0.18;
-      c.target.armSwingL = c.target.armSwingR = 0.35;
-      c.target.elbowL = c.target.elbowR = 0.5;
+      if (c.mob?.id === 'wolf') {
+        // Wolf sits: rear lowers, front legs straight, head level, eyes closed
+      } else if (c.mob?.id === 'guineapig') {
+        c.target.headPitch = 0.18;
+        c.target.headRoll = 0.05;
+        c.target.torsoPitch = 0.05;
+        c.target.crouch = 0.08;
+      } else {
+        c.target.headPitch = 0.3;
+        c.target.headRoll = 0.1;
+        c.overlay.torsoRoll = Math.sin(t * 1.5) * 0.08;
+        c.overlay.bodyY = Math.sin(t * 1.2) * 0.03;
+      }
+      if (c.mob?.id !== 'wolf') {
+        c.target.armSwingL = c.target.armSwingR = 0.35;
+        c.target.elbowL = c.target.elbowR = 0.5;
+      }
       s.nextZ -= dt;
       if (s.nextZ <= 0) {
         c.emote('zzz', 0.5);
-        s.nextZ = 1.6;
+        s.nextZ = 1.8;
       }
       if (c.allowAutoWake && c.brain.energy >= 1 && t > 20) return 'wake';
     },
@@ -226,12 +245,17 @@ export const STATES = {
     },
     update(c, dt, t, s, p) {
       c.poseRate = 3.5;
+      c.target.sit = 0;
       if (t > 1 && c.face.expression === 'sleepy') c.face.setExpression('neutral');
-      const stretch = env(t, 1.0, 2.4, 0.4);
-      c.target.armRaiseL = c.target.armRaiseR = 2.5 * stretch;
-      c.target.torsoPitch = -0.08 * stretch;
-      c.target.headPitch = t < 0.6 ? 0.4 : -0.15 * stretch;
-      if (t > 3) return then(p);
+      if (c.mob?.id === 'wolf') {
+        if (t > 0.8) return then(p);
+      } else {
+        const stretch = env(t, 1.0, 2.4, 0.4);
+        c.target.armRaiseL = c.target.armRaiseR = 2.5 * stretch;
+        c.target.torsoPitch = -0.08 * stretch;
+        c.target.headPitch = t < 0.6 ? 0.4 : -0.15 * stretch;
+        if (t > 3) return then(p);
+      }
     },
   },
 
@@ -321,25 +345,88 @@ export const STATES = {
     },
   },
 
+  hover: {
+    priority: 1,
+    autoLook: true,
+    attentive: true,
+    enter(c) {
+      c.face.target.eyeScale = [1.25, 1.25];
+      c.face.target.mouthOpen = 0.08;
+      if (c.face.expression === 'neutral' || c.face.expression === 'smug') {
+        c.face.setExpression('curious');
+      }
+    },
+    update(c, dt, t) {
+      c.poseRate = 8;
+      c.target.crouch = 0.04 + 0.01 * Math.sin(t * 3);
+      c.target.headPitch = -0.06;
+      c.target.headRoll = 0.06 * Math.sin(t * 2);
+      c.target.torsoRoll = 0.02 * Math.sin(t * 2);
+    },
+    exit(c) {
+      c.face.target.eyeScale = [1.0, 1.0];
+      c.face.target.mouthOpen = 0;
+    },
+  },
+
   pet: {
     priority: 2,
     enter(c, p, s) {
       s.count = p.count ?? 1;
-      c.face.setExpression(s.count > 3 ? 'love' : pick(['uwu', 'happy', 'love']));
-      c.emote(s.count > 3 ? 'sparkle' : 'heart', Math.random() < 0.5 ? -0.6 : 0.6);
       s.side = Math.random() < 0.5 ? -1 : 1;
+      if (c.mob?.id === 'wolf') {
+        // Single click or repeated clicks on wolf:
+        // Shows love hearts (existing heart glyph from Emotes.js)
+        // Eyes STAY NORMAL - do not change face expressions!
+        c.face.setExpression('neutral');
+        const numHearts = Math.min(4, s.count);
+        for (let i = 0; i < numHearts; i++) {
+          const sideOffset = (i === 0 ? 0 : (i % 2 === 1 ? 0.35 : -0.35) * Math.ceil(i / 2));
+          c.emote('heart', sideOffset);
+        }
+      } else if (s.count >= 6) {
+        c.face.setExpression('dizzy');
+        c.emote('sweat', 0.5 * s.side);
+      } else if (s.count >= 4) {
+        c.face.setExpression('sparkle');
+        c.emote('sparkle', 0.6 * s.side);
+        c.emote('heart', -0.6 * s.side);
+      } else if (s.count >= 2) {
+        c.face.setExpression(Math.random() < 0.5 ? 'love' : 'excited');
+        c.emote('sparkle', 0.6 * s.side);
+      } else {
+        c.face.setExpression(pick(['uwu', 'happy']));
+        c.emote(c.mob?.id === 'bluefish' ? 'bubble' : 'heart', 0.6 * s.side);
+      }
     },
     update(c, dt, t, s, p) {
-      c.poseRate = 10;
+      c.poseRate = 12;
       const on = env(t, 0, 1.8, 0.3);
-      c.target.headRoll = 0.3 * s.side * on;
-      c.target.headPitch = 0.12 * on;
-      c.target.crouch = 0.03 * on;
-      c.overlay.bodyY = Math.abs(Math.sin(t * 9)) * 0.02 * on;
-      c.target.armRaiseL = c.target.armRaiseR = 0.6 * on;
-      c.target.elbowL = c.target.elbowR = 1.2 * on;
-      c.overlay.headRoll = Math.sin(t * 5) * 0.05 * on;
-      if (t > 1.9) return then(p);
+      if (c.mob?.id === 'wolf') {
+        c.target.sit = 0;
+        if (t > 1.2) return then(p);
+      } else if (s.count >= 6) {
+        c.target.headRoll = Math.sin(t * 16) * 0.22 * on;
+        c.target.torsoRoll = Math.sin(t * 12) * 0.12 * on;
+        c.target.headPitch = 0.15 * on;
+        c.target.crouch = 0.06 * on;
+        if (t > 1.9) return then(p);
+      } else if (s.count >= 4) {
+        c.overlay.bodyY = Math.abs(Math.sin(t * 12)) * 0.05 * on;
+        c.target.headPitch = -0.15 * on;
+        c.target.headRoll = 0.18 * s.side * on;
+        c.target.armRaiseL = c.target.armRaiseR = 1.2 * on;
+        if (t > 1.9) return then(p);
+      } else {
+        c.target.headRoll = 0.25 * s.side * on;
+        c.target.headPitch = 0.1 * on;
+        c.target.crouch = 0.03 * on;
+        c.overlay.bodyY = Math.abs(Math.sin(t * 9)) * 0.02 * on;
+        c.target.armRaiseL = c.target.armRaiseR = 0.6 * on;
+        c.target.elbowL = c.target.elbowR = 1.2 * on;
+        c.overlay.headRoll = Math.sin(t * 5) * 0.05 * on;
+        if (t > 1.9) return then(p);
+      }
     },
   },
 
@@ -384,6 +471,7 @@ export const STATES = {
       c.poseRate = 9;
       const k = Math.exp(-t * 2.2);
       c.overlay.bodyY = Math.sin(t * 9) * 0.06 * k;
+      c.overlay.crouch = 0.08 * k;
       c.overlay.torsoRoll = Math.sin(t * 7) * 0.2 * k * s.side;
       c.target.headRoll = 0.15 * s.side * k;
       if (t > 1.2) return then(p);
@@ -441,6 +529,7 @@ export const STATES = {
 
         const speed = Math.hypot(s.vx, s.vy) / scale;
         const spin = dazed ? clamp01(speed / 6) : 0;
+        c.target.crouch = -0.06;
         c.overlay.torsoRoll = Math.sin(t * 18) * 0.6 * spin * s.spinDir;
         c.overlay.torsoPitch = Math.cos(t * 14) * 0.4 * spin;
         c.target.torsoPitch += (s.vx / (8 * scale)) * 0.5 * (1 - spin);
@@ -466,7 +555,7 @@ export const STATES = {
       s.slide *= Math.exp(-5 * dt);
       c.loco.x = c.loco.targetX = Math.min(maxX, Math.max(minX, c.loco.x + s.slide * dt));
       const squash = s.impact * Math.max(0, 1 - k / 0.45);
-      c.target.crouch = 0.12 * squash;
+      c.target.crouch = 0.14 * squash;
       c.target.torsoPitch = 0.22 * squash;
       c.target.headPitch = 0.35 * squash;
       c.target.sit = Math.max(0, 1 - k / 1.2);
@@ -528,4 +617,4 @@ export const STATES = {
   },
 };
 
-export const ACTIONS = ['idle', 'happy', 'sad', 'sleepy', 'sleep', 'wake', 'curious', 'surprised', 'excited', 'wave', 'dance', 'pet'];
+export const ACTIONS = ['idle', 'happy', 'sad', 'sleepy', 'sleep', 'wake', 'curious', 'surprised', 'excited', 'wave', 'dance', 'pet', 'hover'];

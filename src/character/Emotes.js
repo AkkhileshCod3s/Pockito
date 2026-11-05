@@ -7,6 +7,8 @@ const GLYPHS = {
   question: { char: '?', color: [0.35, 0.95, 1.0], intensity: 3.0, size: 0.4, life: 2.2 },
   note: { char: '♪', color: [0.45, 0.95, 1.0], intensity: 2.6, size: 0.32, life: 1.8 },
   sparkle: { char: '✦', color: [0.6, 1.0, 1.0], intensity: 3.0, size: 0.32, life: 1.4 },
+  sweat: { char: '💧', color: [0.4, 0.8, 1.0], intensity: 2.6, size: 0.32, life: 1.5 },
+  bubble: { char: '🫧', color: [0.6, 0.95, 1.0], intensity: 2.8, size: 0.32, life: 1.6 },
 };
 
 const _anchor = new THREE.Vector3();

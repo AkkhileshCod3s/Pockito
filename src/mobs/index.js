@@ -1,10 +1,12 @@
 import { BlueFish } from '../bluefish/BlueFish.js';
 import { Wolf } from '../wolf/Wolf.js';
+import { GuineaPig } from '../guineapig/GuineaPig.js';
 
 /** Every mob exposes the same surface: root, joints, face, height, halfWidth, emoteLift, applyPose(), animate(). */
 export const MOBS = {
   bluefish: { label: 'Blue Fish', create: () => new BlueFish() },
   wolf: { label: 'Wolf', create: () => new Wolf() },
+  guineapig: { label: 'Guinea Pig', create: () => new GuineaPig() },
 };
 
 export const MOB_NAMES = Object.keys(MOBS);
@@ -20,6 +22,7 @@ export function nextMob(name) {
 
 /** Frees the GPU resources of a mob that has been removed from the scene. */
 export function disposeMob(mob) {
+  mob.parts?.mixer?.stopAllAction?.();
   mob.root.traverse((o) => {
     if (!o.isMesh) return;
     o.geometry?.dispose();

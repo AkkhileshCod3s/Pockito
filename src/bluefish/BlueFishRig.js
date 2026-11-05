@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import bluefishGlb from '../../assets/models/bluefish.glb?inline';
+import fishGlb from '../../assets/models/fish_swimming.glb?inline';
 import { BlueFishFace } from './BlueFishFace.js';
 
-export const BLUEFISH_HEIGHT = 1.15;
-export const HOVER = 0.34;
-const BODY_HEIGHT = 0.62;
+export const BLUEFISH_HEIGHT = 1.25;
+export const HOVER = 0.38;
+const BODY_HEIGHT = 0.72;
 
 function pivot(name, x = 0, y = 0, z = 0) {
   const g = new THREE.Group();
@@ -22,7 +22,7 @@ export function buildBlueFishRig() {
   root.add(hips);
   hips.add(torso);
   torso.add(head);
-  head.position.set(0, 0, 0.4);
+  head.position.set(0, 0, 0.45);
 
   const joints = { hips, torso, head };
   const parts = {
@@ -30,51 +30,46 @@ export function buildBlueFishRig() {
     face: null,
     mixer: null,
     action: null,
-    finL: null,
-    finR: null,
-    tail: null,
-    headBone: null,
-    headMesh: null,
+    bodyPivot: null,
+    tailPivot: null,
+    tailTipPivot: null,
+    pelvicL: null,
+    pelvicR: null,
+    dorsal: null,
   };
 
-  parts.ready = new GLTFLoader().loadAsync(bluefishGlb).then((gltf) => {
-    // Keep glTF node hierarchy intact under a model group
-    const box = new THREE.Box3().setFromObject(gltf.scene);
-    const size = box.getSize(new THREE.Vector3());
-    const unit = BODY_HEIGHT / size.y;
+  parts.ready = new GLTFLoader().loadAsync(fishGlb).then((gltf) => {
+    // Fish model has length along X (-8 to +5), height along Y (0 to 8), width along Z (-2.6 to 2.6).
+    // Rotating around Y by -PI/2 aligns +X with world +Z (facing camera).
+    const unit = BODY_HEIGHT / 8.0;
 
     const model = new THREE.Group();
     model.name = 'model';
-    // Bluefish model naturally has head at +z (facing camera)
+    model.rotation.y = -Math.PI / 2;
     model.scale.setScalar(unit);
-    // Center fish vertically and longitudinally
-    model.position.y = -(box.min.y + box.max.y) * 0.5 * unit;
-    model.position.z = -(box.min.z + box.max.z) * 0.5 * unit;
+    // Center model at origin
+    model.position.y = -4.0 * unit;
+    model.position.z = 1.5 * unit;
     model.add(gltf.scene);
     torso.add(model);
 
-    let headMat = null;
     gltf.scene.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
         o.receiveShadow = true;
         if (o.material) {
-          o.material.roughness = 1;
-          o.material.metalness = 0;
-          if (!headMat) headMat = o.material;
+          o.material.roughness = 0.85;
+          o.material.metalness = 0.1;
         }
       }
-      if (o.name === 'cube_12') parts.finL = o;
-      if (o.name === 'cube_14') parts.finR = o;
-      if (o.name === 'bone4_9') parts.tail = o;
-      if (o.name === 'bone5_18') parts.headBone = o;
-      if (o.name === 'Object_26') {
-        parts.headMesh = o;
-        if (o.material) headMat = o.material;
-      }
+      if (o.name === 'BodyPivot') parts.bodyPivot = o;
+      if (o.name === 'TailPivot') parts.tailPivot = o;
+      if (o.name === 'TailTipPivot') parts.tailTipPivot = o;
+      if (o.name === 'PelvicLPivot') parts.pelvicL = o;
+      if (o.name === 'PelvicRPivot') parts.pelvicR = o;
+      if (o.name === 'DorsalPivot') parts.dorsal = o;
     });
 
-    // Built-in animation clip
     if (gltf.animations && gltf.animations.length > 0) {
       const mixer = new THREE.AnimationMixer(gltf.scene);
       const action = mixer.clipAction(gltf.animations[0]);
@@ -83,8 +78,8 @@ export function buildBlueFishRig() {
       parts.action = action;
     }
 
-    if (headMat) {
-      parts.face = new BlueFishFace(headMat);
+    if (parts.bodyPivot) {
+      parts.face = new BlueFishFace(parts.bodyPivot);
     }
 
     parts.loaded = true;
