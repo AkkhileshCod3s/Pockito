@@ -56,7 +56,10 @@ export class BlueFish {
 
     // Torso pitch/yaw/roll + tilt into movement and banking into turns
     let roll = p.torsoRoll + p.headRoll * 0.7;
-    let pitch = (p.torsoPitch * 0.5 + p.headPitch * 0.4) * (1 - 0.6 * sit) + this.lean * 0.8 - this.climb * 0.18;
+    // No constant forward lean (that was tipping the nose down whenever it swam). Stay level while swimming
+    // straight, nose up while rising, nose down while sinking.
+    const climbPitch = clamp(this.climb * 0.3, -0.5, 0.5);
+    let pitch = (p.torsoPitch * 0.5 + p.headPitch * 0.4) * (1 - 0.6 * sit) - climbPitch;
     let yaw = p.torsoYaw + p.headYaw * 0.6;
 
     // Click flip / spin reaction

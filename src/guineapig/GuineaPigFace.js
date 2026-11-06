@@ -43,6 +43,16 @@ export class GuineaPigFace {
     nodes.guineaPig.add(this.blushR);
 
     this.snoutBaseY = this.snout ? this.snout.position.y : 0;
+
+    // Eye centres (the eye geometry is baked in model space, so scaling the node squashes it toward the
+    // model origin and makes the eye slide down). We use these to scale each eye around its own centre.
+    const centre = (m) => {
+      if (!m?.geometry) return new THREE.Vector3();
+      m.geometry.computeBoundingBox();
+      return m.geometry.boundingBox.getCenter(new THREE.Vector3());
+    };
+    this.eyeLC = centre(this.eyeL);
+    this.eyeRC = centre(this.eyeR);
   }
 
   apply(face, noseTwitch = 0) {
@@ -65,11 +75,18 @@ export class GuineaPigFace {
       sx = 1.1;
     }
 
-    if (this.eyeL) this.eyeL.scale.set(sx, sy, 1);
-    if (this.eyeR) this.eyeR.scale.set(sx, sy, 1);
+    if (this.eyeL) {
+      this.eyeL.scale.set(sx, sy, 1);
+      this.eyeL.position.set(this.eyeLC.x * (1 - sx), this.eyeLC.y * (1 - sy), 0);
+    }
+    if (this.eyeR) {
+      this.eyeR.scale.set(sx, sy, 1);
+      this.eyeR.position.set(this.eyeRC.x * (1 - sx), this.eyeRC.y * (1 - sy), 0);
+    }
+    const eyesShut = sy < 0.9; // blinking or squinting
 
     // Sparkles
-    const showSparkle = c.heart > 0.35 || face.expression === 'love' || face.expression === 'excited' || face.expression === 'sparkle';
+    const showSparkle = !eyesShut && (c.heart > 0.35 || face.expression === 'love' || face.expression === 'excited' || face.expression === 'sparkle');
     if (this.sparkleL) this.sparkleL.visible = showSparkle;
     if (this.sparkleR) this.sparkleR.visible = showSparkle;
     if (this.sparkle2L) this.sparkle2L.visible = showSparkle;
