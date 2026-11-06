@@ -4,6 +4,7 @@ import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, powerMonitor, scr
 import { MOBS, SIZES, loadSettings, saveSettings } from './settings.js';
 
 app.setName('Pockito');
+if (app.dock) app.dock.hide();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_URL = process.env.VITE_DEV_SERVER_URL;
@@ -21,6 +22,7 @@ let expanded = false;
 if (!app.requestSingleInstanceLock()) {
   console.log('Pockito is already running (check the menu bar). Quitting this copy.');
   app.quit();
+  process.exit(0);
 }
 
 // A short strip along the bottom normally; the full work area while the pet is being carried or falling.
@@ -57,7 +59,12 @@ function createWindow() {
   win.setAlwaysOnTop(true, 'floating');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.once('ready-to-show', () => win.showInactive());
+  win.once('ready-to-show', () => {
+    win.showInactive();
+    buildTray();
+  });
+  win.on('show', () => buildTray());
+  win.on('hide', () => buildTray());
   win.on('closed', () => (win = null));
 
   if (DEV_URL) win.loadURL(DEV_URL);
@@ -77,17 +84,42 @@ function applySettings(patch) {
   buildTray();
 }
 
+function toggleVisibility() {
+  if (!win) return;
+  if (win.isVisible()) {
+    win.hide();
+  } else {
+    win.showInactive();
+  }
+  buildTray();
+}
+
+function getTrayIcon() {
+  const isMac = process.platform === 'darwin';
+  const iconName = isMac ? 'trayTemplate.png' : 'trayWin.png';
+  const iconPath = path.join(__dirname, '..', 'assets', iconName);
+  const icon = nativeImage.createFromPath(iconPath);
+  if (isMac) {
+    icon.setTemplateImage(true);
+  }
+  return icon;
+}
+
 function buildTray() {
   if (!tray) {
-    const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'assets', 'trayTemplate.png'));
-    icon.setTemplateImage(true);
-    tray = new Tray(icon);
+    tray = new Tray(getTrayIcon());
     tray.setToolTip('Pockito');
+    if (process.platform === 'win32') {
+      tray.on('click', () => toggleVisibility());
+    }
   }
+  const isVisible = win ? win.isVisible() : true;
   const asleep = ASLEEP.has(petState);
   const radio = (label, key, value) => ({ label, type: 'radio', checked: settings[key] === value, click: () => applySettings({ [key]: value }) });
 
   tray.setContextMenu(Menu.buildFromTemplate([
+    { label: isVisible ? 'Hide Pockito' : 'Show Pockito', click: () => toggleVisibility() },
+    { type: 'separator' },
     { label: asleep ? 'Wake up' : 'Go to sleep', click: () => command('trigger', { name: asleep ? 'wake' : 'sleepy' }) },
     { label: 'Dance', click: () => command('trigger', { name: 'dance' }), enabled: !asleep },
     { label: 'Wave', click: () => command('trigger', { name: 'wave' }), enabled: !asleep },
@@ -107,7 +139,7 @@ function buildTray() {
     },
     { label: 'Open at login', type: 'checkbox', checked: settings.openAtLogin, click: (i) => applySettings({ openAtLogin: i.checked }) },
     { type: 'separator' },
-    { label: 'Quit Pockito', role: 'quit' },
+    { label: 'Quit Pockito', click: () => app.quit() },
   ]));
 }
 
@@ -139,7 +171,7 @@ ipcMain.on('state', (_e, name) => {
 });
 
 app.whenReady().then(() => {
-  app.dock?.hide();
+  if (app.dock) app.dock.hide();
   createWindow();
   buildTray();
   setInterval(pollIdle, IDLE_POLL_MS);
@@ -149,4 +181,11 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => app.quit());
-app.on('second-instance', () => win?.showInactive());
+app.on('second-instance', () => {
+  if (win) {
+    if (!win.isVisible()) {
+      win.showInactive();
+    }
+    buildTray();
+  }
+});

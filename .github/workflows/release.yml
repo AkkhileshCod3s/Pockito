@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and package installer
+        run: npm run dist
+        env:
+          # =========================================================================
+          # CODE SIGNING & NOTARIZATION SECRETS (Configure in GitHub Repo Secrets):
+          #
+          # macOS:
+          #   Add these in GitHub repo Settings > Secrets and variables > Actions:
+          #     APPLE_ID: Your Apple ID email (e.g. developer@example.com)
+          #     APPLE_APP_SPECIFIC_PASSWORD: App-specific password from appleid.apple.com
+          #     APPLE_TEAM_ID: 10-character Apple Developer Team ID
+          #     CSC_LINK: Base64-encoded Developer ID Application certificate (.p12)
+          #     CSC_KEY_PASSWORD: Password for the .p12 certificate
+          #   Then uncomment:
+          #     APPLE_ID: ${{ secrets.APPLE_ID }}
+          #     APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          #     APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          #     CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          #     CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          #
+          # Windows:
+          #   Add these in GitHub repo Settings > Secrets and variables > Actions:
+          #     CSC_LINK: Base64-encoded Code Signing certificate (.pfx)
+          #     CSC_KEY_PASSWORD: Password for the .pfx certificate
+          #   Then uncomment:
+          #     CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          #     CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          # =========================================================================
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.exe
+            release/*.dmg
+            release/*.blockmap
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
