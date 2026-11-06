@@ -100,6 +100,7 @@ export class Character {
     mob.lean = this.loco.walkAmount * 0.28;
     mob.walkAmount = this.loco.walkAmount;
     mob.walkPhase = this.loco.phase;
+    mob.stateName = this.fsm.name;
 
     dampPose(this.current, this.target, this.poseRate, dt);
     const f = this.final;

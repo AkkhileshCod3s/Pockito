@@ -4,6 +4,7 @@ const SLEEPING = new Set(['sleep', 'sleepy']);
 const AIRBORNE = new Set(['carried', 'drop']);
 const DRAG_THRESHOLD_PX = 6;
 const PET_WINDOW = 3.0;
+const DOUBLE_CLICK_MS = 350;
 const GAZE_DEPTH = 4;
 const VELOCITY_WINDOW_MS = 80;
 const MAX_THROW = 14;
@@ -23,6 +24,7 @@ export class PointerDirector {
     this.press = null;
     this.drag = null;
     this.pets = [];
+    this.lastClick = 0;
     this.attention = new THREE.Vector3();
 
     const target = canvas.ownerDocument;
@@ -116,9 +118,30 @@ export class PointerDirector {
       c.carry = null;
       this.drag = null;
     } else if (this.press) {
-      this.#pet();
+      const now = performance.now();
+      if (c.mob?.id === 'wolf' && now - this.lastClick < DOUBLE_CLICK_MS) {
+        this.lastClick = 0;
+        this.#toggleSit();
+      } else {
+        this.lastClick = now;
+        this.#pet();
+      }
     }
     this.press = null;
+  }
+
+  /** True while the wolf is sitting (also during the short heart reaction that keeps it sitting). */
+  #isSitting() {
+    const c = this.character;
+    return c.stateName === 'sit' || (c.stateName === 'pet' && c.fsm.params.then === 'sit');
+  }
+
+  /** Double-click: sit down, double-click again: stand back up. */
+  #toggleSit() {
+    const c = this.character;
+    c.brain?.resetInteraction?.();
+    if (this.#isSitting() || SLEEPING.has(c.stateName)) c.trigger('wake', { then: 'idle' }, true);
+    else c.trigger('sit', {}, true);
   }
 
   #pet() {
@@ -132,7 +155,7 @@ export class PointerDirector {
       c.trigger(c.mob?.id === 'wolf' ? 'wake' : 'surprised', { then: 'idle' }, true);
     } else {
       c.mob.triggerPetReaction?.(count);
-      c.trigger('pet', { count, then: 'idle' }, true);
+      c.trigger('pet', { count, then: this.#isSitting() ? 'sit' : 'idle' }, true);
     }
   }
 

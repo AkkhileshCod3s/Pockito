@@ -259,6 +259,20 @@ export const STATES = {
     },
   },
 
+  // Wolf only (double-click): sits with its eyes open until it is double-clicked again.
+  sit: {
+    priority: 2,
+    enter(c) {
+      c.restLift = 0;
+      c.loco.stop();
+      c.face.setExpression('neutral');
+    },
+    update(c) {
+      c.poseRate = 4;
+      c.target.sit = 1;
+    },
+  },
+
   curious: {
     priority: 1,
     enter(c, p, s) {
@@ -403,7 +417,7 @@ export const STATES = {
       c.poseRate = 12;
       const on = env(t, 0, 1.8, 0.3);
       if (c.mob?.id === 'wolf') {
-        c.target.sit = 0;
+        c.target.sit = p.then === 'sit' ? 1 : 0; // a sitting wolf keeps sitting while it gets petted
         if (t > 1.2) return then(p);
       } else if (s.count >= 6) {
         c.target.headRoll = Math.sin(t * 16) * 0.22 * on;
