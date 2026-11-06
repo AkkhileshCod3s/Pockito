@@ -1,7 +1,7 @@
 // Mirrors electron/settings.js; used as a fallback when running in a plain browser (npx vite).
 export const DEFAULTS = {
   mob: 'bluefish',
-  petSize: 210,
+  petSize: 130,
   autoWalk: true,
   walkSpeed: 1,
   idleSleepMin: 5,

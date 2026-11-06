@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app } from 'electron';
 
-export const SIZES = { small: 150, medium: 210, large: 290 };
+export const SIZES = { small: 95, medium: 130, large: 175 };
+const OLD_SIZES = { 150: 'small', 210: 'medium', 290: 'large' };
 export const MOBS = { bluefish: 'Blue Fish', wolf: 'Wolf', guineapig: 'Guinea Pig' };
 
 export const DEFAULTS = {
@@ -42,6 +43,8 @@ export function loadSettings() {
   const settings = { ...DEFAULTS };
   for (const key of Object.keys(DEFAULTS)) if (key in stored) settings[key] = stored[key];
   if (!MOBS[settings.mob]) settings.mob = DEFAULTS.mob;
+  // Move users who saved an old size preset onto the matching new one.
+  if (OLD_SIZES[settings.petSize]) settings.petSize = SIZES[OLD_SIZES[settings.petSize]];
   return settings;
 }
 
