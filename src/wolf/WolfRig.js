@@ -66,6 +66,7 @@ export function buildWolfRig() {
           o.material.metalness = 0;
         }
       }
+      if (o.name === 'Object_15') o.visible = false;
       if (o.name === 'Object_18') parts.eyeMesh = o;
       if (o.name === 'Box006005_4') parts.tail = o;
       if (o.name === 'Box006003_3') parts.ears[0] = o;
