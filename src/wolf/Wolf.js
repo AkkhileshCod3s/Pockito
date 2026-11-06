@@ -184,9 +184,14 @@ export class Wolf {
 
     const eye = this.parts.eyeMesh;
     if (eye) {
-      // Squash the eyes around their own centre so they close in place instead of sliding.
-      eye.scale.y = this.eyeOpen;
-      eye.position.y = (this.parts.eyeCenterY ?? 0) * (1 - this.eyeOpen);
+      const s = Math.max(this.eyeOpen, 0.12); // leave a thin dark line when closed
+      eye.scale.y = s;
+      eye.position.y = (this.parts.eyeCenterY ?? 0) * (1 - s);
+      eye.material.polygonOffset = true; // draw the line on top of the lid
+      eye.material.polygonOffsetFactor = -4;
+      eye.material.polygonOffsetUnits = -4;
+      const lid = this.parts.eyeLid;
+      if (lid) lid.visible = this.eyeOpen < 0.97;
     }
   }
 

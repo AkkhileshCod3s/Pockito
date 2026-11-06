@@ -32,6 +32,7 @@ export function buildWolfRig() {
     modelWrapper: null,
     eyeMesh: null,
     eyeCenterY: 0,
+    eyeLid: null,
     tail: null,
     ears: [],
     legs: {},
@@ -66,7 +67,7 @@ export function buildWolfRig() {
           o.material.metalness = 0;
         }
       }
-      if (o.name === 'Object_15') o.visible = false;
+      if (o.name === 'Object_15') o.visible = false; // hide red mesh
       if (o.name === 'Object_18') parts.eyeMesh = o;
       if (o.name === 'Box006005_4') parts.tail = o;
       if (o.name === 'Box006003_3') parts.ears[0] = o;
@@ -94,6 +95,22 @@ export function buildWolfRig() {
     if (parts.eyeMesh) {
       parts.eyeMesh.geometry.computeBoundingBox();
       parts.eyeCenterY = parts.eyeMesh.geometry.boundingBox.getCenter(new THREE.Vector3()).y;
+
+      // Fur-coloured lid that fills the eye hole while blinking/sleeping.
+      const lid = new THREE.Mesh(
+        parts.eyeMesh.geometry,
+        new THREE.MeshStandardMaterial({
+          color: 0xd9d6d2, // match the fur around the eyes
+          roughness: 1,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2,
+        })
+      );
+      lid.visible = false;
+      parts.eyeMesh.parent.add(lid);
+      parts.eyeLid = lid;
     }
 
     // Rest orientation of every node we add motion on top of.
