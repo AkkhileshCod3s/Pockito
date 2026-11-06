@@ -8,11 +8,38 @@ const GLYPHS = {
   note: { char: '♪', color: [0.45, 0.95, 1.0], intensity: 2.6, size: 0.32, life: 1.8 },
   sparkle: { char: '✦', color: [0.6, 1.0, 1.0], intensity: 3.0, size: 0.32, life: 1.4 },
   sweat: { char: '💧', color: [0.4, 0.8, 1.0], intensity: 2.6, size: 0.32, life: 1.5 },
-  bubble: { char: '🫧', color: [0.6, 0.95, 1.0], intensity: 2.8, size: 0.32, life: 1.6 },
+  bubble: { char: '', color: [1, 1, 1], intensity: 1.1, size: 0.11, life: 1.8 }, // small blue water bubble
 };
 
 const _anchor = new THREE.Vector3();
 const easeOutBack = (x) => 1 + 2.70158 * (x - 1) ** 3 + 1.70158 * (x - 1) ** 2;
+
+/** A translucent blue water bubble with a shiny highlight. */
+function makeBubbleTexture() {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const c = size / 2;
+  const r = size * 0.4;
+  const fill = ctx.createRadialGradient(c, c, r * 0.2, c, c, r);
+  fill.addColorStop(0, 'rgba(150, 215, 255, 0.18)');
+  fill.addColorStop(1, 'rgba(60, 150, 255, 0.55)');
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.arc(c, c, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = 'rgba(120, 200, 255, 0.95)';
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // highlight
+  ctx.beginPath();
+  ctx.ellipse(c - r * 0.35, c - r * 0.4, r * 0.22, r * 0.13, -0.7, 0, Math.PI * 2);
+  ctx.fill();
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
 function makeTexture(char) {
   const size = 128;
@@ -43,7 +70,7 @@ export class Emotes {
   spawn(type, origin, scale = 1, side = 0, anchor = null) {
     const g = GLYPHS[type];
     if (!g) return;
-    this.textures[type] ??= makeTexture(g.char);
+    this.textures[type] ??= type === 'bubble' ? makeBubbleTexture() : makeTexture(g.char);
     const material = new THREE.SpriteMaterial({
       map: this.textures[type],
       color: new THREE.Color(...g.color).multiplyScalar(g.intensity * 0.9),
@@ -55,7 +82,8 @@ export class Emotes {
     sprite.position.copy(origin);
     this.group.add(sprite);
     const offset = anchor ? origin.clone().sub(anchor.getWorldPosition(_anchor)) : null;
-    this.active.push({ sprite, type, g, t: 0, origin: origin.clone(), anchor, offset, scale, drift: side || Math.random() - 0.5 });
+    const sizeMul = type === 'bubble' ? 0.7 + Math.random() * 0.7 : 1; // bubbles vary in size
+    this.active.push({ sprite, type, g, sizeMul, t: 0, origin: origin.clone(), anchor, offset, scale, drift: side || Math.random() - 0.5 });
   }
 
   update(dt) {
@@ -72,7 +100,7 @@ export class Emotes {
       if (e.anchor) e.origin.copy(e.anchor.getWorldPosition(_anchor)).add(e.offset);
       const pop = easeOutBack(Math.min(e.t / 0.25, 1));
       const grow = e.type === 'zzz' ? 0.6 + k * 0.8 : 1;
-      const size = e.g.size * e.scale * pop * grow;
+      const size = e.g.size * e.scale * pop * grow * e.sizeMul;
       e.sprite.scale.set(size, size, 1);
       e.sprite.position.set(
         e.origin.x + (e.drift * 0.35 * k + Math.sin(e.t * 4) * 0.03) * e.scale,

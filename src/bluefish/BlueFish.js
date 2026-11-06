@@ -62,13 +62,14 @@ export class BlueFish {
     let pitch = (p.torsoPitch * 0.5 + p.headPitch * 0.4) * (1 - 0.6 * sit) - climbPitch;
     let yaw = p.torsoYaw + p.headYaw * 0.6;
 
-    // Click flip / spin reaction
+    // Click reaction
+    let puff = 1;
     if (this.flipTimer > 0) {
+      // Puff-up bounce: the fish inflates like a happy pufferfish, then pops back with a little jiggle.
       const k = 1 - this.flipTimer; // 0 to 1
-      const spin = Math.sin(k * Math.PI * 2);
-      roll += spin * Math.PI * 1.5;
-      pitch += Math.sin(k * Math.PI * 4) * 0.3;
-      j.torso.position.y = Math.sin(k * Math.PI) * 0.12;
+      const env = Math.sin(k * Math.PI); // fades in and out
+      puff = 1 + 0.3 * env + 0.07 * Math.sin(k * Math.PI * 6) * (1 - k);
+      j.torso.position.y = env * 0.1;
     } else if (sit > 0.05) {
       // Out of water flop when sitting
       const flop = Math.sin(this.flopPhase);
@@ -80,6 +81,7 @@ export class BlueFish {
     }
 
     j.torso.rotation.set(pitch, yaw, roll);
+    j.torso.scale.multiplyScalar(puff);
 
     if (!this.parts.loaded) return;
 
@@ -113,7 +115,7 @@ export class BlueFish {
 
     // Procedural fin flutter when hovering or swimming
     if (this.parts.loaded) {
-      if (this.isHovered && this.parts.pelvicL && this.parts.pelvicR) {
+      if ((this.isHovered || this.flipTimer > 0) && this.parts.pelvicL && this.parts.pelvicR) {
         const flutter = Math.sin(this.swimPhase * 3) * 0.25;
         this.parts.pelvicL.rotation.z = flutter;
         this.parts.pelvicR.rotation.z = -flutter;

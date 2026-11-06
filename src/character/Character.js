@@ -67,6 +67,22 @@ export class Character {
   }
 
   emote(type, side = 0) {
+    // The fish lives in water: it blows blue bubbles instead of hearts and sparkles.
+    if (this.mob?.id === 'bluefish' && (type === 'heart' || type === 'sparkle')) type = 'bubble';
+    if (this.mob?.id === 'bluefish' && type === 'bubble') {
+      // Little bubbles stream out of the fish's mouth and follow it as it moves.
+      const mouth = this.mob.parts?.face?.meshMouth;
+      if (mouth) {
+        mouth.getWorldPosition(_head);
+        const sc = this.placement.scale;
+        for (let i = 0; i < 3; i++) {
+          const o = _head.clone();
+          o.y += i * 0.05 * sc;
+          this.emotes.spawn('bubble', o, sc, (Math.random() - 0.5) * 0.5, mouth);
+        }
+        return;
+      }
+    }
     const s = this.placement.scale;
     this.mob.joints.head.getWorldPosition(_head);
     _head.y += this.mob.emoteLift * s;
