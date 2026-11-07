@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+  <title>Pockito AI</title>
+  <link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+  <!-- Sparkle burst on success -->
+  <div id="sparkle-container" class="sparkles-container hidden">
+    <div class="sparkle s1"></div>
+    <div class="sparkle s2"></div>
+    <div class="sparkle s3"></div>
+    <div class="sparkle s4"></div>
+  </div>
+
+  <div class="setup-container">
+    <div class="scroll-body">
+      <div id="banner" class="banner hidden"></div>
+
+      <div class="header">
+        <img id="logo-img" class="logo" src="assets/logo.png" alt="Pockito logo" width="56" height="56" />
+        <h1 class="title">Let's give Pockito a brain!</h1>
+        <p class="subtitle">Chat with your pet and analyze screenshots using free Groq models.</p>
+      </div>
+
+      <div class="steps-row">
+        <div class="step-chip">
+          <span class="chip-num">1</span>
+          <span>Sign in at Groq</span>
+        </div>
+        <div class="step-chip">
+          <span class="chip-num">2</span>
+          <span>Create key</span>
+        </div>
+        <div class="step-chip">
+          <span class="chip-num">3</span>
+          <span>Paste below</span>
+        </div>
+      </div>
+
+      <div class="link-card">
+        <button type="button" id="btn-get-key" class="btn-groq-link">Get a free Groq key &rarr;</button>
+        <div class="copy-row">
+          <input type="text" id="keys-url-display" class="copy-url-input" value="https://console.groq.com/keys" readonly />
+          <button type="button" id="btn-copy-url" class="btn-copy">Copy link</button>
+        </div>
+      </div>
+
+      <form id="setup-form" class="form">
+        <div class="field">
+          <label for="key-input" class="label">Groq API Key</label>
+          <div class="input-wrapper">
+            <input type="password" id="key-input" class="clay-input" placeholder="gsk_..." autocomplete="off" spellcheck="false" required />
+            <button type="button" id="btn-toggle-vis" class="btn-eye" title="Toggle visibility" aria-label="Toggle visibility">&#128065;</button>
+          </div>
+        </div>
+
+        <div class="notice">
+          Your chats and screen selections are sent to Groq. Your key is encrypted on this computer.
+        </div>
+
+        <div id="status-msg" class="status-msg hidden"></div>
+      </form>
+    </div>
+
+    <!-- Pinned bottom actions -->
+    <div class="actions-pinned">
+      <button type="button" id="btn-delete" class="btn-subtle hidden">Remove key</button>
+      <button type="button" id="btn-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="btn-save" class="btn-primary">Save & Continue</button>
+    </div>
+  </div>
+
+  <script src="setup.js"></script>
+</body>
+</html>

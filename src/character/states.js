@@ -629,6 +629,48 @@ export const STATES = {
       if (t > 6) return then(p);
     },
   },
+
+  think: {
+    priority: 1,
+    enter(c, p, s) {
+      c.face.setExpression('curious');
+      s.nextQuestion = 0.5;
+    },
+    update(c, dt, t, s) {
+      c.poseRate = 5;
+      c.target.headRoll = 0.22;
+      c.target.headPitch = -0.12;
+      c.target.torsoRoll = Math.sin(t * 1.5) * 0.035;
+      c.overlay.torsoPitch = 0.02 * Math.sin(t * 1.2);
+      c.lookHint = [0.35, 0.4];
+
+      s.nextQuestion -= dt;
+      if (s.nextQuestion <= 0) {
+        c.emote('question', 0.4);
+        s.nextQuestion = 1.6;
+      }
+    },
+  },
+
+  oops: {
+    priority: 2,
+    enter(c, p, s) {
+      c.face.setExpression('sad');
+      c.emote('sweat', 0.45);
+      s.duration = 2.5;
+    },
+    update(c, dt, t, s, p) {
+      c.poseRate = 8;
+      c.target.crouch = 0.04;
+      c.target.headPitch = 0.22;
+      c.target.torsoPitch = 0.08;
+      const shakeEnv = env(t, 0, 1.8, 0.25);
+      c.overlay.headYaw = Math.sin(t * 14) * 0.25 * shakeEnv;
+      c.lookHint = [0, -0.2];
+
+      if (t > s.duration) return then(p, 'idle');
+    },
+  },
 };
 
-export const ACTIONS = ['idle', 'happy', 'sad', 'sleepy', 'sleep', 'wake', 'curious', 'surprised', 'excited', 'wave', 'dance', 'pet', 'hover'];
+export const ACTIONS = ['idle', 'happy', 'sad', 'sleepy', 'sleep', 'wake', 'curious', 'surprised', 'excited', 'wave', 'dance', 'pet', 'hover', 'think', 'oops'];

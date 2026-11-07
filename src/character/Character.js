@@ -97,9 +97,19 @@ export class Character {
     this.poseRate = 8;
     this.lookHint = null;
 
+    if (this.inChat) {
+      this.brain?.resetInteraction?.();
+      this.loco.stop();
+      this.loco.speed = 0;
+      this.restLift = this.lift;
+    }
+
     this.fsm.update(dt);
     const state = this.fsm.state;
     this.brain.update(dt, this.fsm.name);
+    if (this.inChat) {
+      this.brain?.resetInteraction?.();
+    }
 
     const { scale, floorY } = this.placement;
     this.loco.maxSpeed = 0.9 * this.settings.walkSpeed;

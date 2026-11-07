@@ -35,6 +35,7 @@ export class Personality {
   }
 
   nextAction(c) {
+    if (c.inChat) return c.stateName || 'idle';
     if (this.energy < 0.18) return 'sleepy';
 
     // Idle for too long (20-40s without interaction) -> sit and rest/sleep

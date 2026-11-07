@@ -3,26 +3,38 @@ import { MOBS, nextMob } from '../mobs/index.js';
 const MARGIN_PX = 8;
 const OFFSET_PX = 14;
 
-/** Right-click popup next to the pet: a "Switch pet" row showing the pet you'd switch to. */
+/** Right-click popup next to the pet: a "Chat with Pockito" row (when AI on) and "Switch pet" row. */
 export class MobMenu {
-  constructor({ settings, save, parent = document.body }) {
+  constructor({ settings, save, onChat = null, parent = document.body }) {
     this.settings = settings;
     this.save = save;
+    this.onChat = onChat;
     this.isOpen = false;
 
     this.el = document.createElement('div');
     this.el.className = 'mob-menu';
     this.el.innerHTML = `
+      <button type="button" class="mob-menu__row mob-menu__chat hidden">
+        <span>Chat with Pockito</span>
+      </button>
       <button type="button" class="mob-menu__row mob-menu__switch">
         <span>Switch pet</span>
         <span class="mob-menu__value"></span>
       </button>
     `;
+    this.chatBtn = this.el.querySelector('.mob-menu__chat');
     this.value = this.el.querySelector('.mob-menu__value');
+
+    this.chatBtn.addEventListener('click', () => {
+      this.close();
+      this.onChat?.();
+    });
+
     this.el.querySelector('.mob-menu__switch').addEventListener('click', () => {
       this.save({ mob: nextMob(this.settings.mob) });
       this.close();
     });
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.close();
     });
@@ -34,7 +46,16 @@ export class MobMenu {
   }
 
   open(px, py) {
-    this.value.textContent = MOBS[nextMob(this.settings.mob)].label;
+    // Read dynamic settings at open time
+    const mobKey = this.settings?.mob || 'bluefish';
+    this.value.textContent = MOBS[nextMob(mobKey)]?.label || 'Next';
+
+    if (this.settings?.aiEnabled) {
+      this.chatBtn.classList.remove('hidden');
+    } else {
+      this.chatBtn.classList.add('hidden');
+    }
+
     this.isOpen = true;
     this.el.classList.add('open');
     // Sit to the right of the cursor, vertically centred on it, kept inside the window.

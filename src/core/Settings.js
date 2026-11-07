@@ -6,6 +6,7 @@ export const DEFAULTS = {
   walkSpeed: 1,
   idleSleepMin: 5,
   openAtLogin: false,
+  aiEnabled: false,
 };
 
 const OLD_STORAGE_KEY = 'minecraft_mob.settings.v1';

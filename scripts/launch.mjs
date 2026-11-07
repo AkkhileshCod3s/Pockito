@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const dev = process.argv.includes('--dev');
 const PORT = 5173;
-const URL = `http://localhost:${PORT}`;
+const URL = `http://127.0.0.1:${PORT}`;
 
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
@@ -13,7 +13,7 @@ if (dev) env.VITE_DEV_SERVER_URL = URL;
 
 let vite = null;
 if (dev) {
-  vite = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], { stdio: 'inherit', env });
+  vite = spawn('npx', ['vite', '--host', '127.0.0.1', '--port', String(PORT), '--strictPort'], { stdio: 'inherit', env, shell: process.platform === 'win32' });
   for (let i = 0; ; i++) {
     try {
       await fetch(URL);

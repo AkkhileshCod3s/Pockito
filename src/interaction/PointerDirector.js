@@ -13,11 +13,12 @@ const THROW_SPEED = 3.5;
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
 export class PointerDirector {
-  constructor({ character, screen, host, canvas, menu = null }) {
+  constructor({ character, screen, host, canvas, menu = null, chatPanel = null }) {
     this.character = character;
     this.screen = screen;
     this.host = host;
     this.menu = menu;
+    this.chatPanel = chatPanel;
     this.pointer = null;
     this.over = false;
     this.airborne = false;
@@ -53,7 +54,7 @@ export class PointerDirector {
   }
 
   #move(e) {
-    this.pointer = { x: e.clientX, y: e.clientY, t: performance.now() };
+    this.pointer = { x: e.clientX, y: e.clientY, target: e.target, t: performance.now() };
     const w = this.#world(e.clientX, e.clientY);
     if (this.press && !this.drag && Math.hypot(e.clientX - this.press.px, e.clientY - this.press.py) > DRAG_THRESHOLD_PX) this.#startDrag(w);
     if (this.drag) {
@@ -84,6 +85,9 @@ export class PointerDirector {
   }
 
   #down(e) {
+    if (this.chatPanel?.isOpen && (this.chatPanel.contains(e.target) || this.chatPanel.isPointOver?.(e.clientX, e.clientY))) {
+      return;
+    }
     const menu = this.menu;
     if (menu?.isOpen) {
       if (!menu.contains(e.target)) menu.close();
@@ -100,6 +104,7 @@ export class PointerDirector {
   #startDrag(w) {
     const c = this.character;
     c.brain?.resetInteraction?.();
+    this.chatPanel?.onDragStart?.();
     this.drag = { offsetX: w.x - c.loco.x, offsetH: w.h - c.lift, x: c.loco.x, h: c.lift, t: performance.now(), history: [] };
     c.carry = { vx: 0 };
     c.trigger('carried', {}, true);
@@ -117,6 +122,7 @@ export class PointerDirector {
       }
       c.carry = null;
       this.drag = null;
+      this.chatPanel?.onDragEnd?.();
     } else if (this.press) {
       const now = performance.now();
       if (c.mob?.id === 'wolf' && now - this.lastClick < DOUBLE_CLICK_MS) {
@@ -163,22 +169,27 @@ export class PointerDirector {
     const c = this.character;
     const w = this.pointer ? this.#world(this.pointer.x, this.pointer.y) : null;
 
-    const over = !!this.drag || !!this.menu?.isOpen || (!!w && this.#hits(w));
+    const isPanelOver = this.chatPanel?.isOpen && (
+      (this.pointer?.target && this.chatPanel.contains(this.pointer.target)) ||
+      (this.pointer && this.chatPanel.isPointOver?.(this.pointer.x, this.pointer.y))
+    );
+
+    const over = !!this.drag || !!this.menu?.isOpen || !!isPanelOver || (!!w && this.#hits(w));
     if (over !== this.over) {
       this.over = over;
       this.host?.setPointerOver(over);
-      document.body.classList.toggle('grab', over);
+      document.body.classList.toggle('grab', over && !isPanelOver);
 
       if (c.mob) c.mob.isHovered = over;
 
-      if (over) {
+      if (over && !isPanelOver) {
         c.brain?.resetInteraction?.();
         if (c.mob?.id === 'wolf' && SLEEPING.has(c.stateName)) {
           c.trigger('wake', { then: 'idle' }, true);
         } else if (!SLEEPING.has(c.stateName) && !AIRBORNE.has(c.stateName) && c.stateName !== 'boot' && c.stateName !== 'carried' && c.stateName !== 'drop') {
           c.trigger('hover', {}, false);
         }
-      } else {
+      } else if (!over) {
         if (c.stateName === 'hover') {
           c.trigger('idle', {}, true);
         }
@@ -203,6 +214,13 @@ export class PointerDirector {
       const vx = a && b && b.t > a.t ? ((b.x - a.x) / (b.t - a.t)) * 1000 : 0;
       c.carry.vx += (vx - c.carry.vx) * (1 - Math.exp(-8 * dt));
       c.attention = null;
+      return;
+    }
+
+    if (c.inChat) {
+      // While chat is open, face forward toward the user
+      this.attention.set(c.loco.x, c.placement.floorY + 1.2 * c.placement.scale, GAZE_DEPTH);
+      c.attention = this.attention;
       return;
     }
 

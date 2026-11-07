@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+  <title>Screen Capture</title>
+  <link rel="stylesheet" href="capture-overlay.css" />
+</head>
+<body>
+  <!-- Full-screen frozen desktop image -->
+  <img id="bg-image" class="bg-image" alt="Frozen desktop" draggable="false" />
+
+  <!-- 4 dimming overlays surrounding the selection -->
+  <div id="dim-top" class="dim-panel"></div>
+  <div id="dim-bottom" class="dim-panel"></div>
+  <div id="dim-left" class="dim-panel"></div>
+  <div id="dim-right" class="dim-panel"></div>
+
+  <!-- Selection rectangle that stays bright -->
+  <div id="selection-box" class="selection-box hidden">
+    <div id="size-label" class="size-label">0 × 0</div>
+    <div class="instructions-pill">Enter to confirm • Esc or right click to cancel</div>
+  </div>
+
+  <!-- Initial hint pill before dragging -->
+  <div id="hint-pill" class="hint-pill">Drag to select area • Enter to confirm • Esc to cancel</div>
+
+  <script src="capture-overlay.js"></script>
+</body>
+</html>

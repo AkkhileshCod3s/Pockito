@@ -7,6 +7,8 @@ import { Character } from './character/Character.js';
 import { ACTIONS } from './character/states.js';
 import { PointerDirector } from './interaction/PointerDirector.js';
 import { MobMenu } from './interaction/MobMenu.js';
+import { Bubble } from './ai/Bubble.js';
+import { ChatPanel } from './ai/ChatPanel.js';
 
 const host = window.mobHost ?? null;
 const { settings, save } = await connectSettings();
@@ -17,8 +19,11 @@ const screen = new ScreenSpace(stage);
 let mobName = MOBS[settings.mob] ? settings.mob : 'bluefish';
 const character = new Character({ mob: createMob(mobName), scene: stage.scene, settings });
 stage.scene.add(character.mob.root);
-const menu = new MobMenu({ settings, save });
-const director = new PointerDirector({ character, screen, host, canvas: stage.renderer.domElement, menu });
+
+const bubble = new Bubble({ stage, character });
+const chatPanel = new ChatPanel({ stage, character, screen, host, settings });
+const menu = new MobMenu({ settings, save, onChat: () => chatPanel.open() });
+const director = new PointerDirector({ character, screen, host, canvas: stage.renderer.domElement, menu, chatPanel });
 
 /** Swap the pet's body in place; the character keeps its position, mood and state. */
 function applyMob(name) {
@@ -49,20 +54,29 @@ const loop = new Loop((dt, t) => {
   updatePlacement();
   director.update(dt);
   character.update(dt, t);
+  chatPanel.update();
+  bubble.update();
   stage.render();
 });
 loop.start();
 
 character.fsm.listeners.add((name) => host?.reportState(name));
 
-host?.onCommand(({ type, name, surprised }) => {
-  if (type === 'trigger' && name === 'wake' && surprised) {
+host?.onCommand((cmd) => {
+  if (!cmd) return;
+  if (cmd.type === 'chat') {
+    chatPanel.open(cmd.options || {});
+  } else if (cmd.type === 'trigger' && cmd.name === 'wake' && cmd.surprised) {
     character.trigger('surprised', { then: 'wake' }, true);
-  } else if (type === 'trigger' && name === 'wake') {
+  } else if (cmd.type === 'trigger' && cmd.name === 'wake') {
     character.trigger('wake', {}, true);
-  } else if (type === 'trigger' && ACTIONS.includes(name)) {
-    character.trigger(name, { then: 'idle' }, true);
+  } else if (cmd.type === 'trigger' && ACTIONS.includes(cmd.name)) {
+    character.trigger(cmd.name, { then: 'idle' }, true);
   }
+});
+
+host?.onOpenChat((options) => {
+  chatPanel.open(options);
 });
 
 // Browser fallback (npx vite): number keys trigger moods.
@@ -74,4 +88,4 @@ if (!host) {
   });
 }
 
-window.mob = { stage, character, director, menu, settings, screen, loop, get pet() { return character.mob; } };
+window.mob = { stage, character, director, menu, settings, screen, loop, bubble, chatPanel, get pet() { return character.mob; } };
