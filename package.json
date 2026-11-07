@@ -3,7 +3,7 @@
   "productName": "Pockito",
   "version": "0.3.0",
   "description": "Pockito, a desktop pet companion that lives on your screen.",
-  "author": "Akhilesh-Sappal <akhileshcodes.tech@gmail.com>",
+  "author": "Akhilesh <akhileshcodes.tech@gmail.com>",
   "type": "module",
   "private": true,
   "license": "MIT",
