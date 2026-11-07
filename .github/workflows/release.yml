@@ -30,7 +30,8 @@ jobs:
         run: npm ci
 
       - name: Build and package installer
-        run: npm run dist
+        # --publish never: the next step uploads the files, so electron-builder must not publish on its own.
+        run: npm run build && npx electron-builder --publish never
         env:
           # =========================================================================
           # CODE SIGNING & NOTARIZATION SECRETS (Configure in GitHub Repo Secrets):
@@ -65,7 +66,9 @@ jobs:
           files: |
             release/*.exe
             release/*.dmg
+            release/*.zip
             release/*.blockmap
+            release/latest*.yml
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

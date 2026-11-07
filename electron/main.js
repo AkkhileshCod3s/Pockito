@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, powerMonitor, screen } from 'electron';
 import { MOBS, SIZES, loadSettings, saveSettings } from './settings.js';
+import { initUpdater, updateMenuItems } from './updater.js';
 
 app.setName('Pockito');
 if (app.dock) app.dock.hide();
@@ -139,6 +140,7 @@ function buildTray() {
     },
     { label: 'Open at login', type: 'checkbox', checked: settings.openAtLogin, click: (i) => applySettings({ openAtLogin: i.checked }) },
     { type: 'separator' },
+    ...updateMenuItems(),
     { label: 'Quit Pockito', click: () => app.quit() },
   ]));
 }
@@ -174,6 +176,7 @@ app.whenReady().then(() => {
   if (app.dock) app.dock.hide();
   createWindow();
   buildTray();
+  initUpdater(buildTray); // rebuilds the tray menu whenever the update state changes
   setInterval(pollIdle, IDLE_POLL_MS);
   screen.on('display-metrics-changed', () => win?.setBounds(stripBounds()));
   screen.on('display-added', () => win?.setBounds(stripBounds()));
