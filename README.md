@@ -27,11 +27,15 @@ Turn on the optional AI and your pet can chat with you and look at a part of you
 
 ## Meet the pets
 
+Five pets so far. Pick the one that matches your desk.
+
 <table align="center">
   <tr>
-    <td align="center" width="240"><h3>Wolfy</h3>A baby Minecraft wolf with a wagging tail. Always happy to see you.</td>
-    <td align="center" width="240"><h3>Fish</h3>A swimming fish that keeps your desktop feeling like an aquarium.</td>
-    <td align="center" width="240"><h3>Guinea pig</h3>A small, round, very calm friend.</td>
+    <td align="center" width="190"><img src="pockito-readme/pets/rabbit.png" alt="Rabbit" height="150"><br><b>Rabbit</b></td>
+    <td align="center" width="190"><img src="pockito-readme/pets/duckling.png" alt="Duckling" height="150"><br><b>Duckling</b></td>
+    <td align="center" width="190"><img src="pockito-readme/pets/fish.png" alt="Fish" height="150"><br><b>Fish</b></td>
+    <td align="center" width="190"><img src="pockito-readme/pets/wolf.png" alt="Wolf" height="150"><br><b>Wolf</b></td>
+    <td align="center" width="190"><img src="pockito-readme/pets/guinea-pig.png" alt="Guinea pig" height="150"><br><b>Guinea pig</b></td>
   </tr>
 </table>
 
