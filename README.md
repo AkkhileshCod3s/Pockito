@@ -108,8 +108,6 @@ Pockito/
 ## Credits
 
 - **Minecraft Wolf (Baby)** by [Matt Alexander](https://sketchfab.com/3d-models/minecraft-wolf-f9181c2d3ea546988187be74173b406b), licensed [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
-- **Fish Swimming** (`fish_swimming.glb`). <!-- TODO: add source author and license -->
-- **Guinea Pig** (`guinea_pig.glb`). <!-- TODO: add source author and license -->
 
 ## License
 
