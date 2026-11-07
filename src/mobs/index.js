@@ -1,12 +1,16 @@
 import { BlueFish } from '../bluefish/BlueFish.js';
 import { Wolf } from '../wolf/Wolf.js';
 import { GuineaPig } from '../guineapig/GuineaPig.js';
+import { Bunny } from '../bunny/Bunny.js';
+import { Duckling } from '../duckling/Duckling.js';
 
 /** Every mob exposes the same surface: root, joints, face, height, halfWidth, emoteLift, applyPose(), animate(). */
 export const MOBS = {
   bluefish: { label: 'Blue Fish', create: () => new BlueFish() },
   wolf: { label: 'Wolf', create: () => new Wolf() },
   guineapig: { label: 'Guinea Pig', create: () => new GuineaPig() },
+  bunny: { label: 'Bunny', create: () => new Bunny() },
+  duckling: { label: 'Duckling', create: () => new Duckling() },
 };
 
 export const MOB_NAMES = Object.keys(MOBS);
