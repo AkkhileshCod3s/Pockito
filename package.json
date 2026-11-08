@@ -1,7 +1,7 @@
 {
   "name": "pockito",
   "productName": "Pockito",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Pockito, a desktop pet companion that lives on your screen.",
   "author": "Akhilesh <akhileshcodes.tech@gmail.com>",
   "type": "module",
@@ -56,6 +56,7 @@
       "icon": "build/icon.ico"
     },
     "nsis": {
+      "artifactName": "Pockito-Setup-${version}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,

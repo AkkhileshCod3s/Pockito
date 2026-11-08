@@ -102,7 +102,11 @@ export function checkForUpdates(manual = false) {
     return;
   }
   manualCheck = manual;
-  autoUpdater.checkForUpdates().catch(() => {}); // failures are reported by the 'error' event
+  // failures are reported by the 'error' event; the extra catch silences the download promise
+  autoUpdater
+    .checkForUpdates()
+    .then((result) => result?.downloadPromise?.catch(() => {}))
+    .catch(() => {});
 }
 
 /** Tray menu items for the current update state (always ends with a separator). */
