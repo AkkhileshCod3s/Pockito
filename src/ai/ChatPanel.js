@@ -639,7 +639,10 @@ export class ChatPanel {
     // Update placeholder
     const mobKey = this.settings?.mob || 'bluefish';
     const mobLabel = MOBS[mobKey]?.label || 'Pockito';
-    this.textarea.placeholder = `Say something to your ${mobLabel.toLowerCase()}…`;
+    const petName = this.settings?.petNames?.[mobKey];
+    this.textarea.placeholder = petName
+      ? `Say something to ${petName}…`
+      : `Say something to your ${mobLabel.toLowerCase()}…`;
 
     this.el.classList.remove('hidden');
     this.el.classList.remove('faded');

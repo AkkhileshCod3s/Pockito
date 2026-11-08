@@ -1,0 +1,86 @@
+:root {
+  --ocean: #2d82db;
+  --ocean-dark: #1b5ea3;
+  --ice: #d6e8fa;
+  --ink: #2b2b3a;
+  --muted: #5d6b82;
+  --line: #c3d6ee;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--ice);
+  color: var(--ink);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.card {
+  height: calc(100vh - 16px);
+  margin: 8px;
+  padding: 16px 18px;
+  background: #fdfefe;
+  border: 1px solid rgba(45, 130, 219, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(45, 130, 219, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.logo { image-rendering: pixelated; border-radius: 10px; }
+
+.title { font-size: 17px; font-weight: 800; }
+
+.subtitle { font-size: 11.5px; line-height: 1.35; color: var(--muted); max-width: 290px; }
+
+form { width: 100%; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.input:focus { border-color: var(--ocean); box-shadow: 0 0 0 3px rgba(45, 130, 219, 0.15); }
+
+.hint { font-size: 10.5px; color: var(--muted); min-height: 14px; }
+
+.actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+.spacer { flex: 1; }
+
+.btn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.btn-primary { background: var(--ocean); color: #fff; border-color: var(--ocean-dark); }
+.btn-primary:hover { background: #3a8fe8; }
+.btn-secondary { background: #fff; color: var(--ocean-dark); border-color: var(--line); }
+.btn-secondary:hover { background: #eef5fd; }
+.btn-ghost { background: transparent; color: var(--muted); padding-left: 4px; padding-right: 4px; text-decoration: underline; }
+.btn-ghost:hover { color: var(--ink); }
+.btn:focus-visible { outline: 3px solid rgba(45, 130, 219, 0.35); outline-offset: 1px; }

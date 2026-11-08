@@ -16,7 +16,7 @@ import {
   desktopCapturer,
   systemPreferences,
 } from 'electron';
-import { MOBS, SIZES, loadSettings, saveSettings } from './settings.js';
+import { MOBS, SIZES, MAX_PET_NAME, cleanPetName, loadSettings, saveSettings } from './settings.js';
 import { initUpdater, updateMenuItems } from './updater.js';
 import {
   hasKey,
@@ -77,6 +77,8 @@ const settings = loadSettings();
 let win = null;
 let tray = null;
 let setupWin = null;
+let nameWin = null;
+let nameMob = null; // which pet the open name window is renaming
 let overlayWin = null;
 let captureActive = false;
 let petState = 'boot';
@@ -232,6 +234,48 @@ function openSetupWindow(reason = null) {
   setupWin.loadFile(path.join(__dirname, 'ui', 'setup.html'), reason ? { query: { reason } } : {});
 }
 
+const petName = () => settings.petNames?.[settings.mob] || '';
+
+function openNameWindow() {
+  nameMob = settings.mob;
+  if (nameWin) {
+    nameWin.loadFile(path.join(__dirname, 'ui', 'name.html'));
+    nameWin.show();
+    nameWin.focus();
+    return;
+  }
+
+  const { workArea } = screen.getPrimaryDisplay();
+  const width = 360;
+  const height = 250;
+  nameWin = new BrowserWindow({
+    width,
+    height,
+    x: Math.round(workArea.x + (workArea.width - width) / 2),
+    y: Math.round(workArea.y + (workArea.height - height) / 2),
+    useContentSize: true,
+    title: 'Name your pet',
+    icon: getAppIcon(),
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'ui', 'namePreload.cjs'),
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+  nameWin.removeMenu();
+  nameWin.setMenuBarVisibility(false);
+  nameWin.webContents.on('will-navigate', (e) => e.preventDefault());
+  nameWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  nameWin.once('ready-to-show', () => nameWin.show());
+  nameWin.on('closed', () => (nameWin = null));
+  nameWin.loadFile(path.join(__dirname, 'ui', 'name.html'));
+}
+
 function openChatPanel(options = {}) {
   if (!settings.aiEnabled || !hasKey()) {
     openSetupWindow('Please configure your Groq API key first to use AI features.');
@@ -248,6 +292,7 @@ function buildTray() {
       tray.on('click', () => toggleVisibility());
     }
   }
+  tray.setToolTip(petName() ? `Pockito: ${petName()}` : 'Pockito');
   const isVisible = win ? win.isVisible() : true;
   const asleep = ASLEEP.has(petState);
   const radio = (label, key, value) => ({ label, type: 'radio', checked: settings[key] === value, click: () => applySettings({ [key]: value }) });
@@ -282,7 +327,7 @@ function buildTray() {
     },
     ...(settings.aiEnabled ? [
       { type: 'separator' },
-      { label: 'Chat with Pockito', click: () => openChatPanel() },
+      { label: 'Chat', click: () => openChatPanel() },
     ] : []),
   ];
 
@@ -296,8 +341,9 @@ function buildTray() {
     { label: 'Wanders around', type: 'checkbox', checked: settings.autoWalk, click: (i) => applySettings({ autoWalk: i.checked }) },
     {
       label: 'Pet',
-      submenu: Object.entries(MOBS).map(([key, label]) => radio(label, 'mob', key)),
+      submenu: Object.entries(MOBS).map(([key, label]) => radio(settings.petNames?.[key] ? `${settings.petNames[key]} (${label})` : label, 'mob', key)),
     },
+    { label: petName() ? `Rename ${petName()}…` : 'Name your pet…', click: () => openNameWindow() },
     {
       label: 'Size',
       submenu: Object.entries(SIZES).map(([name, px]) => radio(name[0].toUpperCase() + name.slice(1), 'petSize', px)),
@@ -335,6 +381,7 @@ ipcMain.handle('settings:get', () => settings);
 ipcMain.on('settings:set', (_e, patch) => {
   const sanitized = { ...patch };
   delete sanitized.aiEnabled;
+  delete sanitized.petNames; // names are only changed through the name window
   applySettings(sanitized);
 });
 ipcMain.on('pointer:over', (_e, over) => {
@@ -421,6 +468,32 @@ ipcMain.on('ai:open-setup', (_e, reason) => {
   openSetupWindow(reason);
 });
 
+// IPC Handlers: Pet name window
+ipcMain.handle('pet-name:get', (event) => {
+  if (!nameWin || event.sender.id !== nameWin.webContents.id) throw new Error('Unauthorized');
+  return {
+    label: MOBS[nameMob] || 'Pet',
+    name: settings.petNames?.[nameMob] || '',
+    max: MAX_PET_NAME,
+  };
+});
+
+ipcMain.handle('pet-name:save', (event, raw) => {
+  if (!nameWin || event.sender.id !== nameWin.webContents.id) throw new Error('Unauthorized');
+  if (!MOBS[nameMob]) return { name: '' };
+  const name = cleanPetName(raw);
+  const petNames = { ...settings.petNames };
+  if (name) petNames[nameMob] = name;
+  else delete petNames[nameMob]; // empty name goes back to the default
+  applySettings({ petNames });
+  return { name };
+});
+
+ipcMain.on('pet-name:close', (event) => {
+  if (!nameWin || event.sender.id !== nameWin.webContents.id) return;
+  nameWin.close();
+});
+
 ipcMain.on('ai:close-setup', () => {
   setupWin?.close();
 });
@@ -447,6 +520,7 @@ ipcMain.handle('chat:send', async (event, { text, attachmentId }) => {
       userText: text || '',
       attachment,
       mobName: settings.mob,
+      petName: petName(),
     });
     return reply;
   } catch (err) {

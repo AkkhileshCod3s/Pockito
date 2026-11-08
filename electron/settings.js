@@ -6,6 +6,21 @@ export const SIZES = { small: 95, medium: 130, large: 175 };
 const OLD_SIZES = { 150: 'small', 210: 'medium', 290: 'large' };
 export const MOBS = { bluefish: 'Blue Fish', wolf: 'Wolf', guineapig: 'Guinea Pig', bunny: 'Bunny', duckling: 'Duckling' };
 
+export const MAX_PET_NAME = 16;
+
+/** Keeps letters (any language, including their vowel/combining marks), numbers, spaces, - and '. Used for every pet name. */
+export function cleanPetName(raw) {
+  if (typeof raw !== 'string') return '';
+  const name = raw
+    .replace(/[^\p{L}\p{M}\p{N} '\-]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_PET_NAME)
+    .trim();
+  // A name needs at least one real letter or number (not only marks, dashes or quotes).
+  return /[\p{L}\p{N}]/u.test(name) ? name : '';
+}
+
 export const DEFAULTS = {
   mob: 'bluefish',
   petSize: SIZES.medium,
@@ -14,6 +29,7 @@ export const DEFAULTS = {
   idleSleepMin: 5,
   openAtLogin: false,
   aiEnabled: false,
+  petNames: {}, // one custom name per pet, e.g. { bluefish: 'Bubbles' }
 };
 
 const file = () => path.join(app.getPath('userData'), 'settings.json');
@@ -44,6 +60,15 @@ export function loadSettings() {
   const settings = { ...DEFAULTS };
   for (const key of Object.keys(DEFAULTS)) if (key in stored) settings[key] = stored[key];
   if (!MOBS[settings.mob]) settings.mob = DEFAULTS.mob;
+  // Pet names: keep only known pets with a valid, cleaned name.
+  const names = {};
+  if (settings.petNames && typeof settings.petNames === 'object') {
+    for (const key of Object.keys(MOBS)) {
+      const name = cleanPetName(settings.petNames[key]);
+      if (name) names[key] = name;
+    }
+  }
+  settings.petNames = names;
   // Move users who saved an old size preset onto the matching new one.
   if (OLD_SIZES[settings.petSize]) settings.petSize = SIZES[OLD_SIZES[settings.petSize]];
   return settings;

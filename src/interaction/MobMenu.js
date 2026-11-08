@@ -15,7 +15,7 @@ export class MobMenu {
     this.el.className = 'mob-menu';
     this.el.innerHTML = `
       <button type="button" class="mob-menu__row mob-menu__chat hidden">
-        <span>Chat with Pockito</span>
+        <span class="mob-menu__chat-label">Chat</span>
       </button>
       <button type="button" class="mob-menu__row mob-menu__switch">
         <span>Switch pet</span>
@@ -23,6 +23,7 @@ export class MobMenu {
       </button>
     `;
     this.chatBtn = this.el.querySelector('.mob-menu__chat');
+    this.chatLabel = this.el.querySelector('.mob-menu__chat-label');
     this.value = this.el.querySelector('.mob-menu__value');
 
     this.chatBtn.addEventListener('click', () => {
@@ -48,7 +49,10 @@ export class MobMenu {
   open(px, py) {
     // Read dynamic settings at open time
     const mobKey = this.settings?.mob || 'bluefish';
-    this.value.textContent = MOBS[nextMob(mobKey)]?.label || 'Next';
+    const names = this.settings?.petNames ?? {};
+    const nextKey = nextMob(mobKey);
+    this.value.textContent = names[nextKey] || MOBS[nextKey]?.label || 'Next';
+    this.chatLabel.textContent = `Chat with ${names[mobKey] || 'Pockito'}`;
 
     if (this.settings?.aiEnabled) {
       this.chatBtn.classList.remove('hidden');

@@ -442,9 +442,9 @@ async function callGroqChat({ messages, model = MODEL_TEXT_DEFAULT, maxTokens = 
  * Unified chat method supporting plain text, text/code files, and image attachments.
  * Implements dynamic model selection, reasoning safeguards, and 404 model retry with fallback.
  */
-export async function chat({ userText = '', attachment = null, mobName = 'bluefish' }) {
+export async function chat({ userText = '', attachment = null, mobName = 'bluefish', petName = '' }) {
   const hasImage = attachment?.kind === 'image' && !!attachment?.dataUrl;
-  const systemPrompt = getPetSystemPrompt(mobName, { hasImage });
+  const systemPrompt = getPetSystemPrompt(mobName, { hasImage, petName });
 
   let promptContent = userText.trim();
   let transcriptNote = userText.trim();

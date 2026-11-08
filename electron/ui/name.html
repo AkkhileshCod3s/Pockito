@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+  <title>Name your pet</title>
+  <link rel="stylesheet" href="name.css" />
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="assets/logo.png" alt="" width="44" height="44" />
+    <h1 id="title" class="title">Name your pet</h1>
+    <p class="subtitle">Pick a name. It shows in the tray menu and your pet answers to it in chat.</p>
+
+    <form id="form" autocomplete="off">
+      <input id="name" class="input" type="text" spellcheck="false" aria-label="Pet name" />
+      <p id="hint" class="hint">Letters, numbers, spaces, - and ' only.</p>
+      <div class="actions">
+        <button id="btn-default" class="btn btn-ghost" type="button">Use default</button>
+        <span class="spacer"></span>
+        <button id="btn-cancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="btn-save" class="btn btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </main>
+  <script src="name.js"></script>
+</body>
+</html>

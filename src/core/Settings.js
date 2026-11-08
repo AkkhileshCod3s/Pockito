@@ -7,6 +7,7 @@ export const DEFAULTS = {
   idleSleepMin: 5,
   openAtLogin: false,
   aiEnabled: false,
+  petNames: {},
 };
 
 const OLD_STORAGE_KEY = 'minecraft_mob.settings.v1';
