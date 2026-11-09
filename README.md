@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="pockito-readme/banner.svg" alt="Pockito: a tiny pet that lives on your desktop" width="100%">
+<img src="assets/banner.svg" alt="Pockito: a tiny pet that lives on your desktop" width="100%">
 
 <br>
 
@@ -13,7 +13,7 @@
 
 [**Meet the pets**](#meet-the-pets) &nbsp;&nbsp; [**Chat**](#chat-with-your-pet) &nbsp;&nbsp; [**Give it a brain**](#give-pockito-a-brain) &nbsp;&nbsp; [**Get started**](#get-started) &nbsp;&nbsp; [**Credits**](#credits)
 
-<img src="pockito-readme/divider.svg" alt="" width="70%">
+<img src="assets/divider.svg" alt="" width="70%">
 
 </div>
 
@@ -27,11 +27,15 @@ Turn on the optional AI and your pet can chat with you and look at a part of you
 
 ## Meet the pets
 
+Five pets so far. Pick the one that matches your desk.
+
 <table align="center">
   <tr>
-    <td align="center" width="240"><h3>Wolfy</h3>A baby Minecraft wolf with a wagging tail. Always happy to see you.</td>
-    <td align="center" width="240"><h3>Fish</h3>A swimming fish that keeps your desktop feeling like an aquarium.</td>
-    <td align="center" width="240"><h3>Guinea pig</h3>A small, round, very calm friend.</td>
+    <td align="center" width="190"><img src="assets/pets/rabbit.png" alt="Rabbit" height="150"><br><b>Rabbit</b></td>
+    <td align="center" width="190"><img src="assets/pets/duckling.png" alt="Duckling" height="150"><br><b>Duckling</b></td>
+    <td align="center" width="190"><img src="assets/pets/fish.png" alt="Fish" height="150"><br><b>Fish</b></td>
+    <td align="center" width="190"><img src="assets/pets/wolf.png" alt="Wolf" height="150"><br><b>Wolf</b></td>
+    <td align="center" width="190"><img src="assets/pets/guinea-pig.png" alt="Guinea pig" height="150"><br><b>Guinea pig</b></td>
   </tr>
 </table>
 
@@ -42,7 +46,7 @@ Turn on the optional AI and your pet can chat with you and look at a part of you
 One bubble floats above your pet and stays put. Type, snap a screenshot, or attach a file. Your pet stays still while it listens.
 
 <div align="center">
-  <img src="pockito-readme/wolf-chat.svg" alt="Chatting with the wolf: 'hi wolfy' and the wolf answers 'Woof woof!'" width="470">
+  <img src="assets/wolf-chat.svg" alt="Chatting with the wolf: 'hi wolfy' and the wolf answers 'Woof woof!'" width="100%">
 </div>
 
 <br>
@@ -60,7 +64,7 @@ One bubble floats above your pet and stays put. Type, snap a screenshot, or atta
 AI is optional and runs on **free Groq models** with your own key. Nothing is sent until you turn it on and ask.
 
 <div align="center">
-  <img src="pockito-readme/ai-setup.svg" alt="The Pockito AI window: sign in at Groq, create a key, paste it below" width="420">
+  <img src="assets/ai-setup.svg" alt="The Pockito AI window: sign in at Groq, create a key, paste it below" width="100%">
 </div>
 
 <br>
@@ -93,7 +97,7 @@ npm start
 Pockito/
 ├── electron/   desktop shell
 ├── src/        app code and UI
-├── pockito-readme/     pets and artwork
+├── assets/     pets and artwork
 ├── build/      packaging resources
 ├── scripts/    helper scripts
 └── .github/    workflows
@@ -115,7 +119,7 @@ Released under the [MIT License](LICENSE).
 
 <br>
 
-<img src="pockito-readme/divider.svg" alt="" width="70%">
+<img src="assets/divider.svg" alt="" width="70%">
 
 Made by [@AkkhileshCod3s](https://github.com/AkkhileshCod3s)
 
