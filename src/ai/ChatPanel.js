@@ -3,10 +3,24 @@ import { MOBS } from '../mobs/index.js';
 import { ACTIONS } from '../character/states.js';
 import { EXPRESSION_NAMES } from '../face/expressions.js';
 import { renderMarkdown, bindMarkdownInteractions } from '../ui/markdown.js';
+import logoUrl from '../../build/icon-256.png?inline';
 
 const _point = new THREE.Vector3();
 const VALID_ACTIONS = new Set(['none', 'happy', 'curious', 'excited', 'wave', 'dance', 'sad', 'surprised']);
 const SKIP_ACTION_STATES = new Set(['carried', 'drop', 'sleep']);
+
+const PANEL_W = 340; // card width in px
+const INPUT_MIN_H = 22; // textarea height for one line
+const INPUT_MAX_H = 84;
+
+const svg = (paths, size = 15, width = 2) =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const ICONS = {
+  close: svg('<path d="M6 6l12 12M18 6L6 18"/>', 14, 2.2),
+  camera: svg('<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
+  clip: svg('<path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/>'),
+  send: svg('<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>', 15, 2.6),
+};
 
 export class ChatPanel {
   constructor({ stage, character, screen, host, settings, parent = document.body }) {
@@ -41,19 +55,54 @@ export class ChatPanel {
     this.tailEl.className = 'chat-card__tail tail-down';
     this.el.appendChild(this.tailEl);
 
-    // Close button
+    // Header: logo + name on the left, close on the right
+    this.header = document.createElement('div');
+    this.header.className = 'chat-card__header';
+
+    const brand = document.createElement('div');
+    brand.className = 'chat-card__brand';
+
+    const logo = document.createElement('img');
+    logo.className = 'chat-card__logo';
+    logo.src = logoUrl;
+    logo.alt = 'Pockito';
+    logo.draggable = false;
+
+    const titles = document.createElement('div');
+    titles.className = 'chat-card__titles';
+
+    const title = document.createElement('div');
+    title.className = 'chat-card__title';
+    title.textContent = 'Pockito';
+
+    this.subtitleEl = document.createElement('div');
+    this.subtitleEl.className = 'chat-card__subtitle';
+
+    titles.appendChild(title);
+    titles.appendChild(this.subtitleEl);
+    brand.appendChild(logo);
+    brand.appendChild(titles);
+
     this.btnClose = document.createElement('button');
     this.btnClose.type = 'button';
     this.btnClose.className = 'chat-card__btn-close';
-    this.btnClose.textContent = '×';
+    this.btnClose.innerHTML = ICONS.close;
     this.btnClose.title = 'Close chat';
     this.btnClose.setAttribute('aria-label', 'Close chat');
-    this.el.appendChild(this.btnClose);
+
+    this.header.appendChild(brand);
+    this.header.appendChild(this.btnClose);
+    this.el.appendChild(this.header);
+
+    // Body: messages, attachment, input
+    this.body = document.createElement('div');
+    this.body.className = 'chat-card__body';
+    this.el.appendChild(this.body);
 
     // Message list container
     this.msgList = document.createElement('div');
     this.msgList.className = 'chat-card__msg-list';
-    this.el.appendChild(this.msgList);
+    this.body.appendChild(this.msgList);
 
     // Thinking indicator bubble (appended inside msgList when waiting)
     this.thinkingBubble = document.createElement('div');
@@ -105,7 +154,7 @@ export class ChatPanel {
     this.chip.appendChild(this.chipSpinner);
     this.chip.appendChild(this.chipRemove);
     this.attachmentRow.appendChild(this.chip);
-    this.el.appendChild(this.attachmentRow);
+    this.body.appendChild(this.attachmentRow);
 
     // Input row: [camera] [upload] [message box] [send]
     this.inputRow = document.createElement('div');
@@ -114,14 +163,14 @@ export class ChatPanel {
     this.btnCamera = document.createElement('button');
     this.btnCamera.type = 'button';
     this.btnCamera.className = 'chat-btn-action';
-    this.btnCamera.textContent = '📷';
+    this.btnCamera.innerHTML = ICONS.camera;
     this.btnCamera.title = 'Capture screen area (Shift+click for full screen)';
     this.btnCamera.setAttribute('aria-label', 'Capture screen area');
 
     this.btnUpload = document.createElement('button');
     this.btnUpload.type = 'button';
     this.btnUpload.className = 'chat-btn-action';
-    this.btnUpload.textContent = '📎';
+    this.btnUpload.innerHTML = ICONS.clip;
     this.btnUpload.title = 'Attach image or text file';
     this.btnUpload.setAttribute('aria-label', 'Attach file');
 
@@ -135,7 +184,7 @@ export class ChatPanel {
     this.btnSend = document.createElement('button');
     this.btnSend.type = 'button';
     this.btnSend.className = 'chat-btn-send';
-    this.btnSend.textContent = '↑';
+    this.btnSend.innerHTML = ICONS.send;
     this.btnSend.title = 'Send message';
     this.btnSend.setAttribute('aria-label', 'Send message');
 
@@ -144,7 +193,7 @@ export class ChatPanel {
     this.inputRow.appendChild(this.textarea);
     this.inputRow.appendChild(this.btnSend);
 
-    this.el.appendChild(this.inputRow);
+    this.body.appendChild(this.inputRow);
     parent.appendChild(this.el);
   }
 
@@ -156,23 +205,22 @@ export class ChatPanel {
       .pockito-chat-card {
         position: fixed;
         z-index: 9998;
-        width: 320px;
+        width: ${PANEL_W}px;
+        box-sizing: border-box;
         background: #ffffff;
-        border: 1px solid rgba(45, 130, 219, 0.28);
-        border-radius: 20px;
+        border: 1px solid #d9e5f4;
+        border-radius: 18px;
         box-shadow:
-          0 4px 12px rgba(0, 0, 0, 0.12),
-          inset 1px 1px 2px rgba(255, 255, 255, 0.9);
-        padding: 12px 14px 10px 14px;
+          0 12px 32px rgba(24, 48, 92, 0.18),
+          0 2px 6px rgba(24, 48, 92, 0.08);
         display: flex;
         flex-direction: column;
-        gap: 8px;
         opacity: 0;
         pointer-events: auto;
         transform: scale(0.96);
         transition: opacity 140ms ease, transform 140ms ease;
-        font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
-        color: #2b2b3a;
+        font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+        color: #26324a;
         user-select: none;
         -webkit-user-select: none;
       }
@@ -203,46 +251,110 @@ export class ChatPanel {
       .chat-card__tail.tail-up {
         top: -7px;
         clip-path: polygon(50% 0, 0 100%, 100% 100%);
+        background: #f1f7ff;
+      }
+      /* Header: logo + name (top left), close (top right) */
+      .chat-card__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 10px 9px 12px;
+        background: linear-gradient(180deg, #f1f7ff 0%, #ffffff 100%);
+        border-bottom: 1px solid #e3ecf7;
+        border-radius: 17px 17px 0 0;
+      }
+      .chat-card__brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+      }
+      .chat-card__logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        display: block;
+        box-shadow: 0 1px 3px rgba(24, 48, 92, 0.25);
+        image-rendering: auto;
+      }
+      .chat-card__titles {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.15;
+      }
+      .chat-card__title {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        color: #1d4f91;
+      }
+      .chat-card__subtitle {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: #7b8ba3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 230px;
       }
       /* Close button */
       .chat-card__btn-close {
-        position: absolute;
-        top: 6px;
-        right: 8px;
-        background: none;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
         border: none;
-        font-size: 17px;
-        font-weight: 700;
-        color: #94a3b8;
+        border-radius: 8px;
+        color: #8a9ab0;
         cursor: pointer;
-        line-height: 1;
-        padding: 2px 6px;
-        border-radius: 6px;
+        padding: 0;
+        transition: background 120ms ease, color 120ms ease;
       }
       .chat-card__btn-close:hover {
-        color: #ef4444;
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      /* Body */
+      .chat-card__body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px 12px 12px;
       }
       /* Messages List */
       .chat-card__msg-list {
-        max-height: 220px;
-        min-height: 48px;
+        max-height: 210px;
+        min-height: 56px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         padding-right: 4px;
-        margin-top: 4px;
       }
       .chat-card__msg-list::-webkit-scrollbar {
         width: 4px;
       }
       .chat-card__msg-list::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
+        background: #cfd9e6;
         border-radius: 4px;
+      }
+      .chat-card__empty {
+        margin: auto;
+        padding: 10px 6px;
+        text-align: center;
+        font-size: 11.5px;
+        line-height: 1.45;
+        color: #8a9ab0;
       }
       .chat-msg {
         display: flex;
-        max-width: 86%;
+        max-width: 88%;
       }
       .chat-msg--user {
         align-self: flex-end;
@@ -251,32 +363,32 @@ export class ChatPanel {
         align-self: flex-start;
       }
       .chat-msg__bubble {
-        padding: 6px 10px;
+        padding: 7px 11px;
         border-radius: 14px;
-        font-size: 12px;
-        line-height: 1.4;
+        font-size: 12.5px;
+        line-height: 1.42;
         word-break: break-word;
         user-select: text;
         -webkit-user-select: text;
       }
       .chat-msg--user .chat-msg__bubble {
-        background: #2d82db;
+        background: linear-gradient(180deg, #3d9cf2 0%, #2d82db 100%);
         color: #ffffff;
-        border-bottom-right-radius: 3px;
-        box-shadow: 0 1px 3px rgba(45, 130, 219, 0.2);
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 1px 3px rgba(45, 130, 219, 0.28);
         white-space: pre-wrap;
       }
       .chat-msg--pet .chat-msg__bubble {
-        background: #ffeecd;
-        color: #2b2b3a;
-        border-bottom-left-radius: 3px;
-        border: 1px solid rgba(242, 166, 90, 0.25);
+        background: #f3f6fb;
+        color: #26324a;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e3eaf4;
         white-space: normal;
       }
       .chat-msg--error .chat-msg__bubble {
-        background: #fee2e2;
-        color: #c45b76;
-        border: 1px solid #f58aa5;
+        background: #fff1f1;
+        color: #b4233a;
+        border: 1px solid #f6b8c0;
         white-space: pre-wrap;
       }
       /* Markdown formatting in pet messages */
@@ -471,87 +583,95 @@ export class ChatPanel {
         font-weight: 700;
         animation: chatDotPulse 1s infinite;
       }
-      /* Input Row */
+      /* Input Row: one slim pill holding [camera] [attach] [text] [send] */
       .chat-card__input-row {
         display: flex;
         align-items: flex-end;
-        gap: 6px;
+        gap: 3px;
+        padding: 3px;
+        background: #f4f8fd;
+        border: 1px solid #d6e3f4;
+        border-radius: 18px;
+        transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      }
+      .chat-card__input-row:focus-within {
+        background: #ffffff;
+        border-color: #2d82db;
+        box-shadow: 0 0 0 3px rgba(45, 130, 219, 0.16);
       }
       .chat-btn-action {
-        background: #f8fafc;
-        border: 1px solid rgba(120, 170, 225, 0.3);
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 24px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        padding: 0;
+        color: #6b819e;
         cursor: pointer;
-        box-shadow: 0 2px 0 rgba(45, 130, 219, 0.18);
-        transition: transform 80ms ease, box-shadow 80ms ease;
+        transition: background 120ms ease, color 120ms ease;
       }
       .chat-btn-action:hover:not(:disabled) {
-        background: #f0f7ff;
+        background: rgba(45, 130, 219, 0.12);
+        color: #2d82db;
       }
-      .chat-btn-action:active:not(:disabled) {
-        transform: translateY(1px);
-        box-shadow: none;
+      .chat-btn-action:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
       .chat-card__textarea {
         flex: 1;
-        background: #f4f8fd;
-        border: 1px solid rgba(45, 130, 219, 0.2);
-        border-radius: 14px;
-        padding: 7px 10px;
+        min-width: 0;
+        box-sizing: border-box;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        padding: 3px 4px;
         font-family: inherit;
-        font-size: 12px;
-        line-height: 1.35;
-        color: #2b2b3a;
+        font-size: 12.5px;
+        line-height: 16px;
+        color: #26324a;
         outline: none;
         resize: none;
-        min-height: 32px;
-        max-height: 96px;
-        box-shadow:
-          inset 2px 2px 4px rgba(45, 130, 219, 0.1),
-          inset -1px -1px 2px rgba(255, 255, 255, 0.9);
+        height: ${INPUT_MIN_H}px;
+        min-height: ${INPUT_MIN_H}px;
+        max-height: ${INPUT_MAX_H}px;
+        box-shadow: none;
         user-select: text !important;
         -webkit-user-select: text !important;
       }
-      .chat-card__textarea:focus {
-        border-color: #2d82db;
-        box-shadow:
-          inset 2px 2px 4px rgba(45, 130, 219, 0.14),
-          0 0 0 2px rgba(80, 195, 245, 0.35);
+      .chat-card__textarea::placeholder {
+        color: #94a3b8;
       }
       .chat-btn-send {
-        background: linear-gradient(180deg, #50c3f5 0%, #2d82db 100%);
-        border: none;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
+        width: 24px;
+        height: 24px;
         flex-shrink: 0;
-        color: #ffffff;
-        font-weight: 800;
-        font-size: 15px;
         display: flex;
         align-items: center;
         justify-content: center;
+        background: linear-gradient(180deg, #4fbcf6 0%, #2d82db 100%);
+        border: none;
+        border-radius: 50%;
+        padding: 0;
+        color: #ffffff;
         cursor: pointer;
-        box-shadow: 0 3px 0 #1b5ea3;
-        transition: transform 80ms ease, box-shadow 80ms ease;
+        box-shadow: 0 1px 3px rgba(45, 130, 219, 0.45);
+        transition: transform 80ms ease, filter 120ms ease;
       }
       .chat-btn-send:hover:not(:disabled) {
         filter: brightness(1.08);
       }
       .chat-btn-send:active:not(:disabled) {
-        transform: translateY(2px);
-        box-shadow: 0 1px 0 #1b5ea3;
+        transform: scale(0.94);
       }
       .chat-btn-send:disabled {
-        opacity: 0.45;
+        opacity: 0.4;
         cursor: not-allowed;
+        box-shadow: none;
       }
       .hidden {
         display: none !important;
@@ -570,7 +690,7 @@ export class ChatPanel {
     // Auto-grow textarea
     this.textarea.addEventListener('input', () => {
       this.textarea.style.height = 'auto';
-      const h = Math.min(96, Math.max(32, this.textarea.scrollHeight));
+      const h = Math.min(INPUT_MAX_H, Math.max(INPUT_MIN_H, this.textarea.scrollHeight));
       this.textarea.style.height = `${h}px`;
       this.#updateSendState();
     });
@@ -643,6 +763,7 @@ export class ChatPanel {
     this.textarea.placeholder = petName
       ? `Say something to ${petName}…`
       : `Say something to your ${mobLabel.toLowerCase()}…`;
+    this.subtitleEl.textContent = petName ? `Chatting with ${petName}` : `Chatting with your ${mobLabel.toLowerCase()}`;
 
     this.el.classList.remove('hidden');
     this.el.classList.remove('faded');
@@ -654,6 +775,8 @@ export class ChatPanel {
 
     if (greeting && this.messages.length === 0) {
       this.addMessage({ role: 'pet', text: greeting });
+    } else if (this.messages.length === 0) {
+      this.#renderMessages();
     }
 
     this.#updateSendState();
@@ -710,7 +833,7 @@ export class ChatPanel {
     _point.project(this.stage.camera);
     const basePy = -_point.y * halfH + halfH;
 
-    const cardW = 320;
+    const cardW = PANEL_W;
     const cardH = this.el.offsetHeight || 180;
     const margin = 12;
 
@@ -766,6 +889,12 @@ export class ChatPanel {
       this.msgList.scrollHeight - this.msgList.scrollTop - this.msgList.clientHeight < 48;
 
     this.msgList.textContent = '';
+    if (this.messages.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'chat-card__empty';
+      empty.textContent = 'Ask anything, or attach a screenshot or file.';
+      this.msgList.appendChild(empty);
+    }
     for (const msg of this.messages) {
       const msgWrap = document.createElement('div');
       msgWrap.className = `chat-msg chat-msg--${msg.role}${msg.isError ? ' chat-msg--error' : ''}`;
@@ -825,7 +954,7 @@ export class ChatPanel {
 
     // Clear input & attachment
     this.textarea.value = '';
-    this.textarea.style.height = '32px';
+    this.textarea.style.height = `${INPUT_MIN_H}px`;
     this.removeAttachment(false);
     this.#updateSendState();
 
