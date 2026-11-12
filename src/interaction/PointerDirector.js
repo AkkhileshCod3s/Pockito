@@ -170,6 +170,7 @@ export class PointerDirector {
     const w = this.pointer ? this.#world(this.pointer.x, this.pointer.y) : null;
 
     const isPanelOver = this.chatPanel?.isOpen && (
+      this.chatPanel.isDragging ||
       (this.pointer?.target && this.chatPanel.contains(this.pointer.target)) ||
       (this.pointer && this.chatPanel.isPointOver?.(this.pointer.x, this.pointer.y))
     );

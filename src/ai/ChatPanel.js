@@ -40,6 +40,15 @@ export class ChatPanel {
     this.lastSentText = '';
     this.lastSentAttachment = null;
 
+    // Dragging the panel by its header: offset from the anchored position, applied as a GPU transform.
+    this.isDragging = false;
+    this.dx = 0;
+    this.dy = 0;
+    this.base = { left: 0, top: 0 };
+    this.dragState = null;
+    this.tailDir = '';
+    this.tailLeft = -1;
+
     this.#buildDOM(parent);
     this.#injectStyles();
     this.#bindEvents();
@@ -217,7 +226,7 @@ export class ChatPanel {
         flex-direction: column;
         opacity: 0;
         pointer-events: auto;
-        transform: scale(0.96);
+        transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0) scale(0.96);
         transition: opacity 140ms ease, transform 140ms ease;
         font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
         color: #26324a;
@@ -226,7 +235,11 @@ export class ChatPanel {
       }
       .pockito-chat-card.visible {
         opacity: 1;
-        transform: scale(1);
+        transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0) scale(1);
+      }
+      .pockito-chat-card.dragging {
+        transition: none;
+        will-change: transform;
       }
       .pockito-chat-card.faded {
         opacity: 0;
@@ -263,12 +276,18 @@ export class ChatPanel {
         background: linear-gradient(180deg, #f1f7ff 0%, #ffffff 100%);
         border-bottom: 1px solid #e3ecf7;
         border-radius: 17px 17px 0 0;
+        cursor: grab;
+        touch-action: none;
+      }
+      .pockito-chat-card.dragging .chat-card__header {
+        cursor: grabbing;
       }
       .chat-card__brand {
         display: flex;
         align-items: center;
         gap: 9px;
         min-width: 0;
+        pointer-events: none;
       }
       .chat-card__logo {
         width: 30px;
@@ -686,6 +705,7 @@ export class ChatPanel {
     });
 
     this.btnClose.addEventListener('click', () => this.close());
+    this.#bindDrag();
 
     // Auto-grow textarea
     this.textarea.addEventListener('input', () => {
@@ -736,6 +756,96 @@ export class ChatPanel {
     this.el.addEventListener('mouseleave', () => { this.isOver = false; });
   }
 
+  /** Drag the panel by its header. The pet walks along underneath it. */
+  #bindDrag() {
+    const header = this.header;
+
+    header.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || !this.isOpen || e.target.closest('.chat-card__btn-close')) return;
+      e.preventDefault();
+      header.setPointerCapture(e.pointerId);
+      this.isDragging = true;
+      this.dragState = {
+        id: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        dx0: this.dx,
+        dy0: this.dy,
+        h: this.el.offsetHeight,
+      };
+      this.el.classList.add('dragging');
+    });
+
+    header.addEventListener('pointermove', (e) => {
+      const d = this.dragState;
+      if (!d || e.pointerId !== d.id) return;
+      const margin = 8;
+      const left = Math.max(margin, Math.min(window.innerWidth - PANEL_W - margin, this.base.left + d.dx0 + (e.clientX - d.startX)));
+      const top = Math.max(margin, Math.min(window.innerHeight - d.h - margin, this.base.top + d.dy0 + (e.clientY - d.startY)));
+      this.#setOffset(left - this.base.left, top - this.base.top);
+
+      // The pet walks to the spot under the middle of the panel.
+      const loco = this.character.loco;
+      const targetX = this.screen.toWorldX(left + PANEL_W / 2);
+      this.character.chatTargetX = Math.min(loco.maxX, Math.max(loco.minX, targetX));
+      this.#updateTail();
+    });
+
+    const end = (e) => {
+      const d = this.dragState;
+      if (!d || (e && e.pointerId !== d.id)) return;
+      this.dragState = null;
+      this.isDragging = false;
+      this.el.classList.remove('dragging');
+      if (header.hasPointerCapture?.(d.id)) header.releasePointerCapture(d.id);
+    };
+    header.addEventListener('pointerup', end);
+    header.addEventListener('pointercancel', end);
+    header.addEventListener('lostpointercapture', end);
+  }
+
+  #setOffset(dx, dy) {
+    this.dx = dx;
+    this.dy = dy;
+    this.el.style.setProperty('--dx', `${dx}px`);
+    this.el.style.setProperty('--dy', `${dy}px`);
+  }
+
+  /** Points the tail at the pet; hides it when the panel has been moved over the pet. */
+  #updateTail() {
+    const c = this.character;
+    const scale = c.placement?.scale || 1;
+    const floorY = c.placement?.floorY || 0;
+    const lift = c.lift || 0;
+    const halfW = window.innerWidth / 2;
+    const halfH = window.innerHeight / 2;
+
+    _point.set(c.loco.x, floorY + lift + c.mob.height * scale, 0).project(this.stage.camera);
+    const petX = _point.x * halfW + halfW;
+    const petTopY = -_point.y * halfH + halfH;
+    _point.set(c.loco.x, floorY + lift, 0).project(this.stage.camera);
+    const petBaseY = -_point.y * halfH + halfH;
+
+    const cardLeft = this.base.left + this.dx;
+    const cardTop = this.base.top + this.dy;
+    const cardBottom = cardTop + (this.el.offsetHeight || 180);
+
+    let dir = '';
+    if (cardBottom <= petTopY + 24) dir = 'tail-down';
+    else if (cardTop >= petBaseY - 24) dir = 'tail-up';
+
+    if (dir !== this.tailDir) {
+      this.tailDir = dir;
+      this.tailEl.className = `chat-card__tail ${dir}`;
+      this.tailEl.style.display = dir ? '' : 'none';
+    }
+    const tailLeft = Math.round(Math.max(16, Math.min(PANEL_W - 24, petX - cardLeft - 7)));
+    if (tailLeft !== this.tailLeft) {
+      this.tailLeft = tailLeft;
+      this.tailEl.style.left = `${tailLeft}px`;
+    }
+  }
+
   contains(node) {
     return this.el.contains(node);
   }
@@ -765,6 +875,7 @@ export class ChatPanel {
       : `Say something to your ${mobLabel.toLowerCase()}…`;
     this.subtitleEl.textContent = petName ? `Chatting with ${petName}` : `Chatting with your ${mobLabel.toLowerCase()}`;
 
+    this.#setOffset(0, 0);
     this.el.classList.remove('hidden');
     this.el.classList.remove('faded');
     requestAnimationFrame(() => {
@@ -787,6 +898,10 @@ export class ChatPanel {
     this.isOpen = false;
     this.isOver = false;
     this.character.inChat = false;
+    this.character.chatTargetX = null;
+    this.isDragging = false;
+    this.dragState = null;
+    this.el.classList.remove('dragging');
     this.host?.setChatMode(false);
 
     // Delete attachment from memory
@@ -851,19 +966,16 @@ export class ChatPanel {
 
     targetTop = Math.max(margin, Math.min(window.innerHeight - cardH - margin, targetTop));
 
-    // Position card via transform
-    this.el.style.left = `${Math.round(targetLeft)}px`;
-    this.el.style.top = `${Math.round(targetTop)}px`;
-
-    // Position tail pointing at pet's x
-    const tailX = Math.max(16, Math.min(cardW - 24, px - targetLeft - 7));
-    this.tailEl.style.left = `${Math.round(tailX)}px`;
-
-    if (tailDown) {
-      this.tailEl.className = 'chat-card__tail tail-down';
-    } else {
-      this.tailEl.className = 'chat-card__tail tail-up';
-    }
+    // Position card, remember where it is anchored (dragging moves it relative to this)
+    this.base.left = Math.round(targetLeft);
+    this.base.top = Math.round(targetTop);
+    this.el.style.left = `${this.base.left}px`;
+    this.el.style.top = `${this.base.top}px`;
+    this.#setOffset(0, 0);
+    this.character.chatTargetX = null;
+    this.tailDir = '';
+    this.tailLeft = -1;
+    this.#updateTail();
 
     this.isAnchored = true;
   }
@@ -1120,6 +1232,13 @@ export class ChatPanel {
   }
 
   update() {
-    // Intentionally no-op per frame to eliminate jitter and lag
+    // Only does work while the pet is walking after a moved panel; otherwise nothing runs per frame.
+    const c = this.character;
+    if (!this.isOpen || c.chatTargetX == null) return;
+    this.#updateTail();
+    const scale = c.placement?.scale || 1;
+    if (!this.isDragging && Math.abs(c.loco.x - c.chatTargetX) < 0.03 * scale && Math.abs(c.loco.speed) < 0.08 * scale) {
+      c.chatTargetX = null; // arrived: the pet holds still again
+    }
   }
 }

@@ -99,8 +99,12 @@ export class Character {
 
     if (this.inChat) {
       this.brain?.resetInteraction?.();
-      this.loco.stop();
-      this.loco.speed = 0;
+      if (this.chatTargetX == null) {
+        this.loco.stop();
+        this.loco.speed = 0;
+      } else {
+        this.loco.targetX = this.chatTargetX; // the chat panel is being moved: walk along underneath it
+      }
       this.restLift = this.lift;
     }
 
@@ -112,7 +116,7 @@ export class Character {
     }
 
     const { scale, floorY } = this.placement;
-    this.loco.maxSpeed = 0.9 * this.settings.walkSpeed;
+    this.loco.maxSpeed = 0.9 * this.settings.walkSpeed * (this.chatTargetX != null ? 2.4 : 1);
     this.loco.update(dt, scale);
     if (state.freeLift !== true) {
       this.restLift = clamp(this.restLift, 0, this.placement.maxLift ?? Infinity);
