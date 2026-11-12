@@ -9,6 +9,9 @@ const GLYPHS = {
   sparkle: { char: '✦', color: [0.6, 1.0, 1.0], intensity: 3.0, size: 0.32, life: 1.4 },
   sweat: { char: '💧', color: [0.4, 0.8, 1.0], intensity: 2.6, size: 0.32, life: 1.5 },
   bubble: { char: '', color: [1, 1, 1], intensity: 1.1, size: 0.11, life: 1.8 }, // small blue water bubble
+  skull: { char: '💀', color: [0.85, 0.95, 0.9], intensity: 2.2, size: 0.34, life: 1.8 },
+  ghost: { char: '👻', color: [0.75, 0.85, 1.0], intensity: 2.0, size: 0.32, life: 1.6 },
+  wisp: { char: '✦', color: [0.45, 1.0, 0.55], intensity: 3.0, size: 0.3, life: 1.4 }, // eerie green will-o'-the-wisp sparkle
 };
 
 const _anchor = new THREE.Vector3();

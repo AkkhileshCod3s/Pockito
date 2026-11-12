@@ -4,7 +4,7 @@ import { app } from 'electron';
 
 export const SIZES = { small: 95, medium: 130, large: 175 };
 const OLD_SIZES = { 150: 'small', 210: 'medium', 290: 'large' };
-export const MOBS = { bluefish: 'Blue Fish', wolf: 'Wolf', guineapig: 'Guinea Pig', bunny: 'Bunny', duckling: 'Duckling' };
+export const MOBS = { bluefish: 'Blue Fish', wolf: 'Wolf', guineapig: 'Guinea Pig', bunny: 'Bunny', duckling: 'Duckling', wraith: 'Wraith' };
 
 export const MAX_PET_NAME = 16;
 

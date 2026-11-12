@@ -69,6 +69,12 @@ export class Character {
   emote(type, side = 0) {
     // The fish lives in water: it blows blue bubbles instead of hearts and sparkles.
     if (this.mob?.id === 'bluefish' && (type === 'heart' || type === 'sparkle')) type = 'bubble';
+    // The wraith reacts with spooky glyphs instead of cute ones.
+    if (this.mob?.id === 'wraith') {
+      if (type === 'heart') type = 'skull';
+      else if (type === 'sparkle') type = 'wisp';
+      else if (type === 'sweat') type = 'ghost';
+    }
     if (this.mob?.id === 'bluefish' && type === 'bubble') {
       // Little bubbles stream out of the fish's mouth and follow it as it moves.
       const mouth = this.mob.parts?.face?.meshMouth;
@@ -159,7 +165,18 @@ export class Character {
     if (w < 0.001) return;
     const s = Math.sin(this.loco.phase);
     const c = Math.cos(this.loco.phase);
-    // In flight: a gentle bob and lean into the direction of travel.
+    if (this.mob.canFly) {
+      // True flight: one smooth up/down glide per stride, no double-bounce and no forward lurch
+      // (Math.abs(sin) below is what reads as a "hop" — a flyer doesn't push off the ground).
+      f.bodyY += s * 0.018 * w;
+      f.torsoRoll += s * 0.05 * w;
+      f.headRoll -= s * 0.03 * w;
+      f.headPitch += c * 0.02 * w;
+      f.armSwingL += 0.1 * w;
+      f.armSwingR += 0.1 * w;
+      return;
+    }
+    // Grounded pets: a gentle bob and lean into the direction of travel.
     f.bodyY += Math.abs(s) * 0.02 * w;
     f.torsoRoll += s * 0.02 * w;
     f.headRoll -= s * 0.03 * w;

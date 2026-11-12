@@ -3,6 +3,7 @@ import { Wolf } from '../wolf/Wolf.js';
 import { GuineaPig } from '../guineapig/GuineaPig.js';
 import { Bunny } from '../bunny/Bunny.js';
 import { Duckling } from '../duckling/Duckling.js';
+import { Wraith } from '../wraith/Wraith.js';
 
 /** Every mob exposes the same surface: root, joints, face, height, halfWidth, emoteLift, applyPose(), animate(). */
 export const MOBS = {
@@ -11,6 +12,7 @@ export const MOBS = {
   guineapig: { label: 'Guinea Pig', create: () => new GuineaPig() },
   bunny: { label: 'Bunny', create: () => new Bunny() },
   duckling: { label: 'Duckling', create: () => new Duckling() },
+  wraith: { label: 'Wraith', create: () => new Wraith() },
 };
 
 export const MOB_NAMES = Object.keys(MOBS);

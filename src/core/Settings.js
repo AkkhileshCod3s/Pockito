@@ -35,7 +35,7 @@ export async function connectSettings() {
     }
   } catch {}
 
-  if (!['bluefish', 'wolf', 'guineapig', 'bunny', 'duckling'].includes(settings.mob)) {
+  if (!['bluefish', 'wolf', 'guineapig', 'bunny', 'duckling', 'wraith'].includes(settings.mob)) {
     settings.mob = DEFAULTS.mob;
   }
 
