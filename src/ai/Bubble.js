@@ -50,9 +50,9 @@ export class Bubble {
         text-align: left;
         opacity: 0;
         transform: translateY(4px) scale(0.96);
-        transition: opacity 140ms ease, transform 140ms ease;
+        transition: opacity 320ms ease, transform 320ms ease;
         word-break: break-word;
-        overflow-y: auto;
+        overflow: hidden;
         user-select: text;
         -webkit-user-select: text;
       }
@@ -226,8 +226,7 @@ export class Bubble {
     requestAnimationFrame(() => this.el.classList.add('visible'));
     this.visible = true;
 
-    const duration = Math.min(20_000, Math.max(4_000, (text?.length || 0) * 75));
-    this.timer = setTimeout(() => this.hide(), duration);
+    this.timer = setTimeout(() => this.hide(), 3000);
   }
 
   hide() {
@@ -237,7 +236,7 @@ export class Bubble {
     this.el.classList.remove('visible');
     setTimeout(() => {
       if (!this.visible) this.el.classList.add('hidden');
-    }, 160);
+    }, 320);
   }
 
   update() {

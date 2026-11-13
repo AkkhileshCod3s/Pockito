@@ -1,3 +1,6 @@
+window.addEventListener('error', (e) => console.error('[fatal]', e.error?.stack || e.message));
+window.addEventListener('unhandledrejection', (e) => console.error('[fatal]', e.reason?.stack || e.reason));
+
 import { Stage } from './core/Stage.js';
 import { Loop } from './core/Loop.js';
 import { ScreenSpace } from './core/ScreenSpace.js';
@@ -24,6 +27,19 @@ const bubble = new Bubble({ stage, character });
 const chatPanel = new ChatPanel({ stage, character, screen, host, settings });
 const menu = new MobMenu({ settings, save, onChat: () => chatPanel.open() });
 const director = new PointerDirector({ character, screen, host, canvas: stage.renderer.domElement, menu, chatPanel });
+
+// Greet the user shortly after the pet wakes up, every time the app opens — whichever pet is active.
+const GREETINGS = [
+  (name) => `Hi! Welcome back👋`,
+  (name) => `Hey,! Good to see you again.`,
+  (name) => `I missed you! Welcome back 🐾`,
+  (name) => `${name} is happy you're here!`,
+];
+setTimeout(() => {
+  const name = settings.petNames?.[mobName] || 'buddy';
+  const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](name);
+  bubble.say(greeting);
+}, 1800);
 
 /** Swap the pet's body in place; the character keeps its position, mood and state. */
 function applyMob(name) {

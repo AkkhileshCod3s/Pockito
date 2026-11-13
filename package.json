@@ -1,7 +1,7 @@
 {
   "name": "pockito",
   "productName": "Pockito",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "Pockito, a desktop pet companion that lives on your screen.",
   "author": "Akhilesh <akhileshcodes.tech@gmail.com>",
   "type": "module",
